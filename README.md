@@ -43,3 +43,11 @@ Checks if a user has permission to perform an action in a workspace.
 ```json
 { "allowed": true }
 ```
+
+## Roles & Permissions
+The service is seeded with the following roles:
+- **workspace_owner**: Full access to all features.
+- **content_editor**: Access to create/edit/read Documents and CMS entries (Blog, Comments).
+- **read_only**: Read-only access to Documents and CMS entries.
+- **super_admin**: System-wide full access.
+
