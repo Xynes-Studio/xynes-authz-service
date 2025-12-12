@@ -3,6 +3,8 @@ import { db } from "../../src/db";
 import { userRoles, roles, permissions, rolePermissions } from "../../src/db/schema";
 import { eq } from "drizzle-orm";
 import app from "../../src/index";
+import { Hono } from "hono";
+import { createReadyRoute } from "../../src/routes/ready.route";
 
 // Integration test suite
 describe("Authz Integration (DB)", () => {
@@ -72,8 +74,9 @@ describe("Authz Integration (DB)", () => {
         });
         
         expect(res.status).toBe(200);
-        const body = await res.json() as { allowed: boolean };
-        expect(body.allowed).toBe(true);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(true);
     });
 
     test("POST /authz/check - should allow workspace_owner", async () => {
@@ -86,7 +89,9 @@ describe("Authz Integration (DB)", () => {
             body: JSON.stringify({ userId: USER_OWNER, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.create" }),
             headers: new Headers({ "Content-Type": "application/json" }),
         });
-        expect((await res.json() as { allowed: boolean }).allowed).toBe(true);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(true);
     });
 
      test("POST /authz/check - should allow content_editor to create", async () => {
@@ -99,7 +104,9 @@ describe("Authz Integration (DB)", () => {
             body: JSON.stringify({ userId: USER_EDITOR, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.create" }),
             headers: new Headers({ "Content-Type": "application/json" }),
         });
-        expect((await res.json() as { allowed: boolean }).allowed).toBe(true);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(true);
     });
 
     test("POST /authz/check - should allow read_only to read but NOT create", async () => {
@@ -113,7 +120,9 @@ describe("Authz Integration (DB)", () => {
             body: JSON.stringify({ userId: USER_READONLY, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.read" }),
             headers: new Headers({ "Content-Type": "application/json" }),
         });
-        expect((await resRead.json() as { allowed: boolean }).allowed).toBe(true);
+        const bodyRead = await resRead.json() as any;
+        expect(bodyRead.ok).toBe(true);
+        expect(bodyRead.data.allowed).toBe(true);
 
         // Create (Denied)
         const resCreate = await app.request("/authz/check", {
@@ -121,7 +130,9 @@ describe("Authz Integration (DB)", () => {
             body: JSON.stringify({ userId: USER_READONLY, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.create" }),
             headers: new Headers({ "Content-Type": "application/json" }),
         });
-        expect((await resCreate.json() as { allowed: boolean }).allowed).toBe(false);
+        const bodyCreate = await resCreate.json() as any;
+        expect(bodyCreate.ok).toBe(true);
+        expect(bodyCreate.data.allowed).toBe(false);
     });
 
     test("POST /authz/check - should return true for role with permission (legacy test)", async () => {
@@ -162,8 +173,9 @@ describe("Authz Integration (DB)", () => {
         });
         
         expect(res.status).toBe(200);
-        const body = await res.json() as { allowed: boolean };
-        expect(body.allowed).toBe(true);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(true);
     });
 
     test("POST /authz/check - should return false for unknown user", async () => {
@@ -178,8 +190,9 @@ describe("Authz Integration (DB)", () => {
         });
         
         expect(res.status).toBe(200);
-        const body = await res.json() as { allowed: boolean };
-        expect(body.allowed).toBe(false);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(false);
     });
     test("POST /authz/check - should return 400 for missing fields", async () => {
         const res = await app.request("/authz/check", {
@@ -193,8 +206,31 @@ describe("Authz Integration (DB)", () => {
     test("GET /health should return status ok", async () => {
         const res = await app.request("/health");
         expect(res.status).toBe(200);
-        const body = await res.json() as { status: string };
-        expect(body.status).toBe("ok");
+        const body = await res.json() as any;
+        expect(body).toEqual({ status: "ok", service: "xynes-authz-service" });
+    });
+
+    test("GET /ready should return status ready when db reachable", async () => {
+        const res = await app.request("/ready");
+        expect(res.status).toBe(200);
+        const body = await res.json() as any;
+        expect(body).toEqual({ status: "ready" });
+    });
+
+    test("Ready should return 503 for invalid database url", async () => {
+        const databaseUrl = process.env.DATABASE_URL;
+        if (!databaseUrl) throw new Error("DATABASE_URL is required for this test");
+
+        const invalidUrl = (() => {
+            const url = new URL(databaseUrl);
+            url.hostname = "127.0.0.1";
+            url.port = "1";
+            return url.toString();
+        })();
+
+        const failingApp = new Hono();
+        failingApp.route("/", createReadyRoute({ getDatabaseUrl: () => invalidUrl }));
+        const failingRes = await failingApp.request("/ready");
+        expect(failingRes.status).toBe(503);
     });
 });
-

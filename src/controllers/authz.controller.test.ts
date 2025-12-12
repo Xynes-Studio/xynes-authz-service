@@ -26,7 +26,9 @@ describe("POST /authz/check (Controller)", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(await res.json()).toEqual({ allowed: true });
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(true);
         expect(checkSpy).toHaveBeenCalledWith("u1", "w1", "a1");
         checkSpy.mockRestore();
     });
@@ -45,7 +47,9 @@ describe("POST /authz/check (Controller)", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(await res.json()).toEqual({ allowed: false });
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
+        expect(body.data.allowed).toBe(false);
         checkSpy.mockRestore();
     });
 
