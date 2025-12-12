@@ -3,6 +3,13 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun --env-file=.env.localhost run --watch index.ts",
+    "start": "bun --env-file=.env.localhost run index.ts",
+    "test": "bun --env-file=.env.localhost test",
+    "test:coverage": "bun --env-file=.env.localhost test --coverage",
+    "lint": "bun x biome check ."
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/pg": "^8.16.0",
