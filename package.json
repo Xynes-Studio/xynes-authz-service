@@ -4,10 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --env-file=.env.localhost run --watch index.ts",
-    "start": "bun --env-file=.env.localhost run index.ts",
-    "test": "bun --env-file=.env.localhost test",
-    "test:coverage": "bun --env-file=.env.localhost test --coverage",
+    "dev": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run --watch index.ts'",
+    "start": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run index.ts'",
+    "test": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test'",
+    "test:coverage": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test --coverage'",
     "lint": "bun x biome check ."
   },
   "devDependencies": {

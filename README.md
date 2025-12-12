@@ -23,12 +23,24 @@ Built with **Bun**, **Hono**, **Drizzle ORM**, and **PostgreSQL** (Supabase).
 4. `bun run seed`
 
 ## Running
-- Dev: `bun dev`
-- Test: `bun test`
-- Coverage: `bun test --coverage`
-- Lint: `bunx tsc --noEmit`
+- Dev: `bun run dev` (defaults to `.env.dev`; override with `XYNES_ENV_FILE=.env.localhost`)
+- Test: `bun run test`
+- Coverage: `bun run test:coverage`
+- Lint: `bun run lint`
 
 ## API
+### GET /health
+Liveness check. Returns:
+```json
+{ "status": "ok", "service": "xynes-authz-service" }
+```
+
+### GET /ready
+Readiness check. Runs a fast Postgres check and returns:
+```json
+{ "status": "ready" }
+```
+
 ### POST /authz/check
 Checks if a user has permission to perform an action in a workspace.
 **Body**:
@@ -62,4 +74,3 @@ The service is seeded with the following roles:
 - **content_editor**: Access to create/edit/read Documents and CMS entries (Blog, Comments).
 - **read_only**: Read-only access to Documents and CMS entries.
 - **super_admin**: System-wide full access.
-
