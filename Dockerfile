@@ -5,4 +5,4 @@ FROM base AS dev
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
-CMD ["bun", "--watch", "index.ts"]
+CMD ["bun", "--watch", "src/index.ts"]

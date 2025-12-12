@@ -1,5 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, spyOn, mock, beforeAll, afterAll } from "bun:test";
 import app from "../index";
+import { AuthzService } from "../services/authz.service";
 
 describe("POST /authz/check (Controller)", () => {
     test("should return 400 if body is invalid", async () => {
@@ -9,5 +10,61 @@ describe("POST /authz/check (Controller)", () => {
             headers: new Headers({ "Content-Type": "application/json" }),
         });
         expect(res.status).toBe(400);
+    });
+
+    test("should return 200 { allowed: true } when service returns true", async () => {
+        const checkSpy = spyOn(AuthzService, "checkPermission").mockResolvedValue(true);
+
+        const res = await app.request("/authz/check", {
+            method: "POST",
+            body: JSON.stringify({
+                userId: "u1",
+                workspaceId: "w1",
+                actionKey: "a1"
+            }),
+            headers: new Headers({ "Content-Type": "application/json" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ allowed: true });
+        expect(checkSpy).toHaveBeenCalledWith("u1", "w1", "a1");
+        checkSpy.mockRestore();
+    });
+
+    test("should return 200 { allowed: false } when service returns false", async () => {
+        const checkSpy = spyOn(AuthzService, "checkPermission").mockResolvedValue(false);
+
+        const res = await app.request("/authz/check", {
+            method: "POST",
+            body: JSON.stringify({
+                userId: "u1",
+                workspaceId: "w1",
+                actionKey: "a1"
+            }),
+            headers: new Headers({ "Content-Type": "application/json" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ allowed: false });
+        checkSpy.mockRestore();
+    });
+
+    test("should return 500 when service throws", async () => {
+        const checkSpy = spyOn(AuthzService, "checkPermission").mockRejectedValue(new Error("DB Boom"));
+
+        const res = await app.request("/authz/check", {
+            method: "POST",
+            body: JSON.stringify({
+                userId: "u1",
+                workspaceId: "w1",
+                actionKey: "a1"
+            }),
+            headers: new Headers({ "Content-Type": "application/json" }),
+        });
+
+        expect(res.status).toBe(500);
+        const body = await res.json() as any;
+        expect(body.error.code).toBe("INTERNAL_ERROR");
+        checkSpy.mockRestore();
     });
 });

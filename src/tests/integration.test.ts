@@ -181,4 +181,20 @@ describe("Authz Integration (DB)", () => {
         const body = await res.json() as { allowed: boolean };
         expect(body.allowed).toBe(false);
     });
+    test("POST /authz/check - should return 400 for missing fields", async () => {
+        const res = await app.request("/authz/check", {
+            method: "POST",
+            body: JSON.stringify({}),
+            headers: new Headers({ "Content-Type": "application/json" }),
+        });
+        expect(res.status).toBe(400);
+    });
+
+    test("GET /health should return status ok", async () => {
+        const res = await app.request("/health");
+        expect(res.status).toBe(200);
+        const body = await res.json() as { status: string };
+        expect(body.status).toBe("ok");
+    });
 });
+

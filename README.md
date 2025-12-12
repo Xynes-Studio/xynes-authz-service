@@ -39,9 +39,21 @@ Checks if a user has permission to perform an action in a workspace.
   "actionKey": "docs.document.create"
 }
 ```
-**Response**:
+### Response Success (200)
 ```json
 { "allowed": true }
+```
+
+### Response Error (500)
+If the service cannot check permissions (e.g. database down), it returns 500 with a structured error:
+```json
+{
+  "allowed": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "An internal error occurred while checking permissions."
+  }
+}
 ```
 
 ## Roles & Permissions

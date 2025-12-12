@@ -16,8 +16,13 @@ export class AuthzController {
             return c.json({ allowed });
         } catch (error) {
             console.error("Error checking permission:", error);
-            // In production, hide specific error details
-            return c.json({ allowed: false, error: "Internal Error" }, 500);
+            return c.json({ 
+                allowed: false, 
+                error: {
+                    code: "INTERNAL_ERROR",
+                    message: "An internal error occurred while checking permissions."
+                }
+            }, 500);
         }
     }
 }
