@@ -6,9 +6,10 @@ import app from "../../src/index";
 import { Hono } from "hono";
 import { createReadyRoute } from "../../src/routes/ready.route";
 import { seedAuthz } from "../../src/db/seed/authz.seed";
+import { INTERNAL_SERVICE_TOKEN } from "../support/internal-auth";
 
 // Integration test suite
-describe("Authz Integration (DB)", () => {
+describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration (DB)", () => {
     const TEST_WORKSPACE_ID = `int-test-work-${Date.now()}`;
     const TEST_USER_ID = `int-test-user-${Date.now()}`;
 
@@ -50,7 +51,10 @@ describe("Authz Integration (DB)", () => {
                 workspaceId: TEST_WORKSPACE_ID,
                 actionKey: "docs.document.create"
             }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         
         expect(res.status).toBe(200);
@@ -67,7 +71,10 @@ describe("Authz Integration (DB)", () => {
         const res = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({ userId: USER_OWNER, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.create" }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
@@ -82,7 +89,10 @@ describe("Authz Integration (DB)", () => {
         const res = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({ userId: USER_EDITOR, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.create" }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
@@ -98,7 +108,10 @@ describe("Authz Integration (DB)", () => {
         const resRead = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({ userId: USER_READONLY, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.read" }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         const bodyRead = await resRead.json() as any;
         expect(bodyRead.ok).toBe(true);
@@ -108,7 +121,10 @@ describe("Authz Integration (DB)", () => {
         const resCreate = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({ userId: USER_READONLY, workspaceId: TEST_WORKSPACE_ID, actionKey: "docs.document.create" }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         const bodyCreate = await resCreate.json() as any;
         expect(bodyCreate.ok).toBe(true);
@@ -150,7 +166,10 @@ describe("Authz Integration (DB)", () => {
                 workspaceId: TEST_WORKSPACE_ID,
                 actionKey: "docs.document.read"
             }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         
         expect(res.status).toBe(200);
@@ -167,7 +186,10 @@ describe("Authz Integration (DB)", () => {
                 workspaceId: "unknown",
                 actionKey: "docs.document.create"
             }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         
         expect(res.status).toBe(200);
@@ -179,7 +201,10 @@ describe("Authz Integration (DB)", () => {
         const res = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({}),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         expect(res.status).toBe(400);
     }, 15_000);

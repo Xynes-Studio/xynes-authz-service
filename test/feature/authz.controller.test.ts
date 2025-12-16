@@ -1,15 +1,54 @@
 import { describe, expect, test, spyOn } from "bun:test";
 import app from "../../src/index";
 import { AuthzService } from "../../src/services/authz.service";
+import { INTERNAL_SERVICE_TOKEN } from "../support/internal-auth";
 
 describe("POST /authz/check (Controller)", () => {
     test("should return 400 if body is invalid", async () => {
         const res = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({}),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
         expect(res.status).toBe(400);
+    });
+
+    test("should return 401 when X-Internal-Service-Token is missing", async () => {
+        const res = await app.request("/authz/check", {
+            method: "POST",
+            body: JSON.stringify({
+                userId: "u1",
+                workspaceId: "w1",
+                actionKey: "a1"
+            }),
+            headers: new Headers({ "Content-Type": "application/json" }),
+        });
+        expect(res.status).toBe(401);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(false);
+        expect(body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    test("should return 403 when X-Internal-Service-Token is mismatched", async () => {
+        const res = await app.request("/authz/check", {
+            method: "POST",
+            body: JSON.stringify({
+                userId: "u1",
+                workspaceId: "w1",
+                actionKey: "a1"
+            }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": "wrong-token",
+            }),
+        });
+        expect(res.status).toBe(403);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(false);
+        expect(body.error.code).toBe("FORBIDDEN");
     });
 
     test("should return 200 { allowed: true } when service returns true", async () => {
@@ -22,7 +61,10 @@ describe("POST /authz/check (Controller)", () => {
                 workspaceId: "w1",
                 actionKey: "a1"
             }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
 
         expect(res.status).toBe(200);
@@ -43,7 +85,10 @@ describe("POST /authz/check (Controller)", () => {
                 workspaceId: "w1",
                 actionKey: "a1"
             }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
 
         expect(res.status).toBe(200);
@@ -63,7 +108,10 @@ describe("POST /authz/check (Controller)", () => {
                 workspaceId: "w1",
                 actionKey: "a1"
             }),
-            headers: new Headers({ "Content-Type": "application/json" }),
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+            }),
         });
 
         expect(res.status).toBe(500);

@@ -4,8 +4,11 @@ import { permissions, roles, rolePermissions, userRoles } from "../../src/db/sch
 import { and, eq, inArray } from "drizzle-orm";
 import app from "../../src/index";
 import { seedAuthz } from "../../src/db/seed/authz.seed";
+import { INTERNAL_SERVICE_TOKEN } from "../support/internal-auth";
 
-describe("Authz seed + /authz/check (New actions)", () => {
+describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")(
+  "Authz seed + /authz/check (New actions)",
+  () => {
   const workspaceId = `int-ws-${Date.now()}`;
   const ownerUserId = `int-owner-${Date.now()}`;
   const editorUserId = `int-editor-${Date.now()}`;
@@ -80,7 +83,10 @@ describe("Authz seed + /authz/check (New actions)", () => {
       const ownerRes = await app.request("/authz/check", {
         method: "POST",
         body: JSON.stringify({ userId: ownerUserId, workspaceId, actionKey }),
-        headers: new Headers({ "Content-Type": "application/json" }),
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        }),
       });
       expect(ownerRes.status).toBe(200);
       expect((await ownerRes.json() as any).data.allowed).toBe(true);
@@ -88,7 +94,10 @@ describe("Authz seed + /authz/check (New actions)", () => {
       const editorRes = await app.request("/authz/check", {
         method: "POST",
         body: JSON.stringify({ userId: editorUserId, workspaceId, actionKey }),
-        headers: new Headers({ "Content-Type": "application/json" }),
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        }),
       });
       expect(editorRes.status).toBe(200);
       expect((await editorRes.json() as any).data.allowed).toBe(true);
@@ -100,7 +109,10 @@ describe("Authz seed + /authz/check (New actions)", () => {
       const res = await app.request("/authz/check", {
         method: "POST",
         body: JSON.stringify({ userId: readOnlyUserId, workspaceId, actionKey }),
-        headers: new Headers({ "Content-Type": "application/json" }),
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        }),
       });
       expect(res.status).toBe(200);
       expect((await res.json() as any).data.allowed).toBe(true);
@@ -112,10 +124,14 @@ describe("Authz seed + /authz/check (New actions)", () => {
       const res = await app.request("/authz/check", {
         method: "POST",
         body: JSON.stringify({ userId: readOnlyUserId, workspaceId, actionKey }),
-        headers: new Headers({ "Content-Type": "application/json" }),
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        }),
       });
       expect(res.status).toBe(200);
       expect((await res.json() as any).data.allowed).toBe(false);
     }
   }, 15_000);
-});
+  },
+);
