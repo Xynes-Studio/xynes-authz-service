@@ -10,10 +10,11 @@ Built with **Bun**, **Hono**, **Drizzle ORM**, and **PostgreSQL** (Supabase).
     - `src/services`: Business logic and Database interactions.
     - `src/routes`: Route definitions.
     - `src/db`: Database schema and connection.
+    - `src/db/seed`: Idempotent seed logic (upsert by key).
 - **Testing**:
     - **TDD**: Tests written before/concurrently with code.
-    - **Coverage**: Aiming for >75% coverage.
-    - **Tools**: `bun test` for unit/integration.
+    - **Coverage**: Minimum **75%** via `bun test --coverage` (see `bun run test:coverage`).
+    - **Segregation**: `test/unit/**`, `test/integration/**`, `test/feature/**`.
 - **Linting**: Standard Bun/TS configuration.
 
 ## Setup
@@ -74,3 +75,14 @@ The service is seeded with the following roles:
 - **content_editor**: Access to create/edit/read Documents and CMS entries (Blog, Comments).
 - **read_only**: Read-only access to Documents and CMS entries.
 - **super_admin**: System-wide full access.
+
+New permissions added (AUTHZ-COVERAGE-1):
+- `docs.document.update`
+- `docs.document.listByWorkspace`
+- `cms.blog_entry.listAdmin`
+- `cms.blog_entry.updateMeta`
+- `cms.templates.listGlobal`
+- `cms.content_types.listForWorkspace`
+
+Dev docs:
+- `docs/DEV.md`

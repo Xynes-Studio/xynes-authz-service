@@ -1,66 +1,46 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import { db } from "../../src/db";
 import { userRoles, roles, permissions, rolePermissions } from "../../src/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import app from "../../src/index";
 import { Hono } from "hono";
 import { createReadyRoute } from "../../src/routes/ready.route";
+import { seedAuthz } from "../../src/db/seed/authz.seed";
 
 // Integration test suite
 describe("Authz Integration (DB)", () => {
-    const TEST_USER_ID = "int-test-user-1";
-    const TEST_WORKSPACE_ID = "int-test-work-1";
+    const TEST_WORKSPACE_ID = `int-test-work-${Date.now()}`;
+    const TEST_USER_ID = `int-test-user-${Date.now()}`;
 
-    // Constants for test
-    const PERMISSIONS_LIST = [
-        { key: "docs.document.create", description: "Create documents" },
-        { key: "docs.document.read", description: "Read documents" },
-        { key: "cms.blog_entry.create", description: "Create blog entries" },
-        { key: "cms.blog_entry.read", description: "Read blog entries" },
-    ];
+    const LEGACY_ROLE_KEY = `editor_legacy_${Date.now()}`;
+    let legacyRoleId: string | null = null;
 
     beforeAll(async () => {
-        // Setup: Ensure permissions exist (mini-seed for test)
-        await db.insert(permissions).values(PERMISSIONS_LIST).onConflictDoNothing();
+        await seedAuthz({ db });
 
-        // Setup: Ensure super_admin role exists
-        const [superAdminRole] = await db.insert(roles).values({
-            key: "super_admin",
-            description: "Super Admin",
-        }).onConflictDoNothing().returning();
-        
-        const superAdminId = superAdminRole ? superAdminRole.id : (await db.query.roles.findFirst({ where: eq(roles.key, "super_admin") }))!.id;
+        const seededRoles = await db
+            .select({ id: roles.id, key: roles.key })
+            .from(roles)
+            .where(inArray(roles.key, ["super_admin", "workspace_owner", "content_editor", "read_only"]));
+        const roleIdByKey = new Map(seededRoles.map((r) => [r.key, r.id]));
 
-        // Assign to user
+        const superAdminId = roleIdByKey.get("super_admin");
+        if (!superAdminId) throw new Error("Expected super_admin role to be seeded");
+
         await db.insert(userRoles).values({
             workspaceId: TEST_WORKSPACE_ID,
             userId: TEST_USER_ID,
-            roleId: superAdminId
+            roleId: superAdminId,
         }).onConflictDoNothing();
+    }, 15_000);
 
-        // Setup: Ensure other roles exist and have permissions
-        // Workspace Owner
-        const [ownerRole] = await db.insert(roles).values({ key: "workspace_owner", description: "Owner" }).onConflictDoNothing().returning();
-        const ownerId = ownerRole ? ownerRole.id : (await db.query.roles.findFirst({ where: eq(roles.key, "workspace_owner") }))!.id;
-        // Assign all permissions to owner (just mapping all from PERMISSIONS_LIST for test simplicity)
-        const allPerms = await db.select().from(permissions);
-        await db.insert(rolePermissions).values(allPerms.map(p => ({ roleId: ownerId, permissionId: p.id }))).onConflictDoNothing();
-
-        // Content Editor
-        const [editorRole] = await db.insert(roles).values({ key: "content_editor", description: "Editor" }).onConflictDoNothing().returning();
-        const editorId = editorRole ? editorRole.id : (await db.query.roles.findFirst({ where: eq(roles.key, "content_editor") }))!.id;
-        // Assign creation perms
-        const createPerm = allPerms.find(p => p.key === "docs.document.create");
-        if (createPerm) await db.insert(rolePermissions).values({ roleId: editorId, permissionId: createPerm.id }).onConflictDoNothing();
-
-        // Read Only
-        const [readOnlyRole] = await db.insert(roles).values({ key: "read_only", description: "Read Only" }).onConflictDoNothing().returning();
-        const readOnlyId = readOnlyRole ? readOnlyRole.id : (await db.query.roles.findFirst({ where: eq(roles.key, "read_only") }))!.id;
-         // Assign read perms
-        const readPerm = allPerms.find(p => p.key === "docs.document.read");
-        if (readPerm) await db.insert(rolePermissions).values({ roleId: readOnlyId, permissionId: readPerm.id }).onConflictDoNothing();
-
-    });
+    afterAll(async () => {
+        await db.delete(userRoles).where(eq(userRoles.workspaceId, TEST_WORKSPACE_ID));
+        if (legacyRoleId) {
+            await db.delete(rolePermissions).where(eq(rolePermissions.roleId, legacyRoleId));
+            await db.delete(roles).where(eq(roles.id, legacyRoleId));
+        }
+    }, 15_000);
 
     test("POST /authz/check - should return true for super_admin", async () => {
         const res = await app.request("/authz/check", {
@@ -77,10 +57,10 @@ describe("Authz Integration (DB)", () => {
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
-    });
+    }, 15_000);
 
     test("POST /authz/check - should allow workspace_owner", async () => {
-        const USER_OWNER = "user-owner";
+        const USER_OWNER = `user-owner-${Date.now()}`;
         const ownerId = (await db.query.roles.findFirst({ where: eq(roles.key, "workspace_owner") }))!.id;
         await db.insert(userRoles).values({ workspaceId: TEST_WORKSPACE_ID, userId: USER_OWNER, roleId: ownerId }).onConflictDoNothing();
 
@@ -92,10 +72,10 @@ describe("Authz Integration (DB)", () => {
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
-    });
+    }, 15_000);
 
      test("POST /authz/check - should allow content_editor to create", async () => {
-        const USER_EDITOR = "user-editor-2";
+        const USER_EDITOR = `user-editor-${Date.now()}`;
         const editorId = (await db.query.roles.findFirst({ where: eq(roles.key, "content_editor") }))!.id;
         await db.insert(userRoles).values({ workspaceId: TEST_WORKSPACE_ID, userId: USER_EDITOR, roleId: editorId }).onConflictDoNothing();
 
@@ -107,10 +87,10 @@ describe("Authz Integration (DB)", () => {
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
-    });
+    }, 15_000);
 
     test("POST /authz/check - should allow read_only to read but NOT create", async () => {
-        const USER_READONLY = "user-readonly";
+        const USER_READONLY = `user-readonly-${Date.now()}`;
         const roId = (await db.query.roles.findFirst({ where: eq(roles.key, "read_only") }))!.id;
         await db.insert(userRoles).values({ workspaceId: TEST_WORKSPACE_ID, userId: USER_READONLY, roleId: roId }).onConflictDoNothing();
 
@@ -133,12 +113,12 @@ describe("Authz Integration (DB)", () => {
         const bodyCreate = await resCreate.json() as any;
         expect(bodyCreate.ok).toBe(true);
         expect(bodyCreate.data.allowed).toBe(false);
-    });
+    }, 15_000);
 
     test("POST /authz/check - should return true for role with permission (legacy test)", async () => {
         // Setup: Create a new role 'editor' with permission 'docs.document.read' if not exists
         // (Assuming seed created permissions)
-        const EDITOR_ROLE_KEY = "editor_legacy";
+        const EDITOR_ROLE_KEY = LEGACY_ROLE_KEY;
         
         // Ensure role exists
         const [editorRole] = await db.insert(roles).values({
@@ -147,6 +127,7 @@ describe("Authz Integration (DB)", () => {
         }).onConflictDoUpdate({ target: roles.key, set: { description: "Editor Legacy" } }).returning();
 
         const roleId = editorRole ? editorRole.id : (await db.query.roles.findFirst({ where: eq(roles.key, EDITOR_ROLE_KEY) }))!.id;
+        legacyRoleId = roleId;
 
         // Assign permission
         const perm = await db.query.permissions.findFirst({ where: eq(permissions.key, "docs.document.read") });
@@ -155,7 +136,7 @@ describe("Authz Integration (DB)", () => {
         await db.insert(rolePermissions).values({ roleId, permissionId: perm.id }).onConflictDoNothing();
 
         // Assign to NEW test user
-        const USER_2 = "user-editor-legacy";
+        const USER_2 = `user-editor-legacy-${Date.now()}`;
         await db.insert(userRoles).values({
             workspaceId: TEST_WORKSPACE_ID,
             userId: USER_2,
@@ -176,7 +157,7 @@ describe("Authz Integration (DB)", () => {
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
-    });
+    }, 15_000);
 
     test("POST /authz/check - should return false for unknown user", async () => {
         const res = await app.request("/authz/check", {
@@ -193,7 +174,7 @@ describe("Authz Integration (DB)", () => {
         const body = await res.json() as any;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(false);
-    });
+    }, 15_000);
     test("POST /authz/check - should return 400 for missing fields", async () => {
         const res = await app.request("/authz/check", {
             method: "POST",
@@ -201,21 +182,21 @@ describe("Authz Integration (DB)", () => {
             headers: new Headers({ "Content-Type": "application/json" }),
         });
         expect(res.status).toBe(400);
-    });
+    }, 15_000);
 
     test("GET /health should return status ok", async () => {
         const res = await app.request("/health");
         expect(res.status).toBe(200);
         const body = await res.json() as any;
         expect(body).toEqual({ status: "ok", service: "xynes-authz-service" });
-    });
+    }, 15_000);
 
     test("GET /ready should return status ready when db reachable", async () => {
         const res = await app.request("/ready");
         expect(res.status).toBe(200);
         const body = await res.json() as any;
         expect(body).toEqual({ status: "ready" });
-    });
+    }, 15_000);
 
     test("Ready should return 503 for invalid database url", async () => {
         const databaseUrl = process.env.DATABASE_URL;
@@ -232,5 +213,5 @@ describe("Authz Integration (DB)", () => {
         failingApp.route("/", createReadyRoute({ getDatabaseUrl: () => invalidUrl }));
         const failingRes = await failingApp.request("/ready");
         expect(failingRes.status).toBe(503);
-    });
+    }, 15_000);
 });

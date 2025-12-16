@@ -1,6 +1,6 @@
-import { describe, expect, test, spyOn, mock, beforeAll, afterAll } from "bun:test";
-import app from "../index";
-import { AuthzService } from "../services/authz.service";
+import { describe, expect, test, spyOn } from "bun:test";
+import app from "../../src/index";
+import { AuthzService } from "../../src/services/authz.service";
 
 describe("POST /authz/check (Controller)", () => {
     test("should return 400 if body is invalid", async () => {
