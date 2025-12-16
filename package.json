@@ -8,6 +8,8 @@
     "start": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run index.ts'",
     "test": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test'",
     "test:coverage": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test --coverage'",
+    "migrate": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" x drizzle-kit migrate'",
+    "seed": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run src/scripts/seed.ts'",
     "lint": "bun x biome check ."
   },
   "devDependencies": {

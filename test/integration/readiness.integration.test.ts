@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { checkPostgresReadiness } from "./readiness";
+import { checkPostgresReadiness } from "../../src/infra/readiness";
 
 describe("checkPostgresReadiness", () => {
     test("should succeed when schemaName is provided", async () => {
@@ -10,4 +10,3 @@ describe("checkPostgresReadiness", () => {
         expect(true).toBe(true);
     });
 });
-

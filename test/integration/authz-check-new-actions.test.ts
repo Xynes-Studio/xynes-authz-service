@@ -1,0 +1,121 @@
+import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { db } from "../../src/db";
+import { permissions, roles, rolePermissions, userRoles } from "../../src/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
+import app from "../../src/index";
+import { seedAuthz } from "../../src/db/seed/authz.seed";
+
+describe("Authz seed + /authz/check (New actions)", () => {
+  const workspaceId = `int-ws-${Date.now()}`;
+  const ownerUserId = `int-owner-${Date.now()}`;
+  const editorUserId = `int-editor-${Date.now()}`;
+  const readOnlyUserId = `int-readonly-${Date.now()}`;
+
+  const updateActions = ["docs.document.update", "cms.blog_entry.updateMeta"] as const;
+  const listActions = [
+    "docs.document.listByWorkspace",
+    "cms.blog_entry.listAdmin",
+    "cms.templates.listGlobal",
+    "cms.content_types.listForWorkspace",
+  ] as const;
+
+  beforeAll(async () => {
+    await seedAuthz({ db });
+    await seedAuthz({ db }); // idempotency
+
+    const roleRows = await db.select().from(roles).where(inArray(roles.key, ["workspace_owner", "content_editor", "read_only"]));
+    const roleIdByKey = new Map(roleRows.map((r) => [r.key, r.id]));
+
+    const ownerRoleId = roleIdByKey.get("workspace_owner");
+    const editorRoleId = roleIdByKey.get("content_editor");
+    const readOnlyRoleId = roleIdByKey.get("read_only");
+    if (!ownerRoleId || !editorRoleId || !readOnlyRoleId) throw new Error("Expected roles to be seeded");
+
+    await db.insert(userRoles).values({ workspaceId, userId: ownerUserId, roleId: ownerRoleId }).onConflictDoNothing();
+    await db.insert(userRoles).values({ workspaceId, userId: editorUserId, roleId: editorRoleId }).onConflictDoNothing();
+    await db.insert(userRoles).values({ workspaceId, userId: readOnlyUserId, roleId: readOnlyRoleId }).onConflictDoNothing();
+  });
+
+  afterAll(async () => {
+    await db.delete(userRoles).where(eq(userRoles.workspaceId, workspaceId));
+  }, 15_000);
+
+  test("seed inserts new permissions", async () => {
+    const keys = [...updateActions, ...listActions];
+    const rows = await db.select().from(permissions).where(inArray(permissions.key, keys));
+    expect(rows.map((r) => r.key).sort()).toEqual([...keys].sort());
+  });
+
+  test("seed maps new permissions to roles", async () => {
+    const roleRows = await db.select().from(roles).where(inArray(roles.key, ["workspace_owner", "content_editor", "read_only"]));
+    const roleIdByKey = new Map(roleRows.map((r) => [r.key, r.id]));
+
+    const permRows = await db.select().from(permissions).where(inArray(permissions.key, [...updateActions, ...listActions]));
+    const permIdByKey = new Map(permRows.map((p) => [p.key, p.id]));
+
+    const roleIds = roleRows.map((r) => r.id);
+    const permIds = permRows.map((p) => p.id);
+
+    const rolePermissionRows = await db
+      .select()
+      .from(rolePermissions)
+      .where(and(inArray(rolePermissions.roleId, roleIds), inArray(rolePermissions.permissionId, permIds)));
+    const hasMapping = (roleKey: string, permissionKey: string) => {
+      const roleId = roleIdByKey.get(roleKey);
+      const permissionId = permIdByKey.get(permissionKey);
+      if (!roleId || !permissionId) return false;
+      return rolePermissionRows.some((rp) => rp.roleId === roleId && rp.permissionId === permissionId);
+    };
+
+    for (const key of [...updateActions, ...listActions]) {
+      expect(hasMapping("workspace_owner", key)).toBe(true);
+      expect(hasMapping("content_editor", key)).toBe(true);
+    }
+    for (const key of listActions) expect(hasMapping("read_only", key)).toBe(true);
+    for (const key of updateActions) expect(hasMapping("read_only", key)).toBe(false);
+  });
+
+  test("owner/editor allowed for update actions", async () => {
+    for (const actionKey of updateActions) {
+      const ownerRes = await app.request("/authz/check", {
+        method: "POST",
+        body: JSON.stringify({ userId: ownerUserId, workspaceId, actionKey }),
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
+      expect(ownerRes.status).toBe(200);
+      expect((await ownerRes.json() as any).data.allowed).toBe(true);
+
+      const editorRes = await app.request("/authz/check", {
+        method: "POST",
+        body: JSON.stringify({ userId: editorUserId, workspaceId, actionKey }),
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
+      expect(editorRes.status).toBe(200);
+      expect((await editorRes.json() as any).data.allowed).toBe(true);
+    }
+  }, 15_000);
+
+  test("read_only allowed for list actions", async () => {
+    for (const actionKey of listActions) {
+      const res = await app.request("/authz/check", {
+        method: "POST",
+        body: JSON.stringify({ userId: readOnlyUserId, workspaceId, actionKey }),
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
+      expect(res.status).toBe(200);
+      expect((await res.json() as any).data.allowed).toBe(true);
+    }
+  }, 15_000);
+
+  test("read_only denied for update actions", async () => {
+    for (const actionKey of updateActions) {
+      const res = await app.request("/authz/check", {
+        method: "POST",
+        body: JSON.stringify({ userId: readOnlyUserId, workspaceId, actionKey }),
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
+      expect(res.status).toBe(200);
+      expect((await res.json() as any).data.allowed).toBe(false);
+    }
+  }, 15_000);
+});

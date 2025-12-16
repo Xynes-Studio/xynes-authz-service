@@ -1,9 +1,5 @@
-import { describe, expect, test, mock } from "bun:test";
-import { AuthzService } from "../services/authz.service";
-
-// Mocking dependencies if possible.
-// Bun's test runner can mock modules, but here we can rely on the pure function resolvePermission for high value unit tests.
-// And we can integration test the full stack to cover the rest.
+import { describe, expect, test } from "bun:test";
+import { AuthzService } from "../../src/services/authz.service";
 
 describe("AuthzService.resolvePermission (Pure Unit)", () => {
     test("should allow super_admin", () => {

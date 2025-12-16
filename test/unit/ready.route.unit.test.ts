@@ -1,6 +1,6 @@
 import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { Hono } from "hono";
-import { createReadyRoute } from "../routes/ready.route";
+import { createReadyRoute } from "../../src/routes/ready.route";
 
 describe("Ready Endpoint (Unit)", () => {
     const checkMock = mock();

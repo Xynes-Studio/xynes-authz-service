@@ -1,6 +1,11 @@
-import { db } from "../db";
 import { userRoles, rolePermissions, permissions, roles } from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+
+type UserRoleRow = { roleKey: string; roleId: string };
+type CheckPermissionDeps = {
+    fetchUserRoles: (userId: string, workspaceId: string) => Promise<UserRoleRow[]>;
+    roleHasPermission: (roleIds: string[], actionKey: string) => Promise<boolean>;
+};
 
 export class AuthzService {
     /**
@@ -31,38 +36,47 @@ export class AuthzService {
     /**
      * Checks if a user has a specific permission in a workspace.
      */
-    static async checkPermission(userId: string, workspaceId: string, actionKey: string): Promise<boolean> {
-        // 1. Fetch user roles in workspace
-        const userRolesResult = await db
-            .select({
-                roleKey: roles.key,
-                roleId: roles.id
-            })
-            .from(userRoles)
-            .innerJoin(roles, eq(userRoles.roleId, roles.id))
-            .where(and(eq(userRoles.userId, userId), eq(userRoles.workspaceId, workspaceId)));
+    static async checkPermission(
+        userId: string,
+        workspaceId: string,
+        actionKey: string,
+        deps?: Partial<CheckPermissionDeps>
+    ): Promise<boolean> {
+        const fetchUserRoles =
+            deps?.fetchUserRoles ??
+            (async (u: string, w: string) => {
+                const { db } = await import("../db");
+                return db
+                    .select({
+                        roleKey: roles.key,
+                        roleId: roles.id,
+                    })
+                    .from(userRoles)
+                    .innerJoin(roles, eq(userRoles.roleId, roles.id))
+                    .where(and(eq(userRoles.userId, u), eq(userRoles.workspaceId, w)));
+            });
 
-        const userRoleKeys = userRolesResult.map(r => r.roleKey);
-        const userRoleIds = userRolesResult.map(r => r.roleId);
+        const roleHasPermission =
+            deps?.roleHasPermission ??
+            (async (roleIds: string[], permissionKey: string) => {
+                if (roleIds.length === 0) return false;
+                const { db } = await import("../db");
+                const rows = await db
+                    .select({ id: permissions.id })
+                    .from(rolePermissions)
+                    .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+                    .where(and(inArray(rolePermissions.roleId, roleIds), eq(permissions.key, permissionKey)))
+                    .limit(1);
+                return rows.length > 0;
+            });
+
+        const userRolesResult = await fetchUserRoles(userId, workspaceId);
+        const userRoleKeys = userRolesResult.map((r) => r.roleKey);
 
         if (userRoleKeys.length === 0) return false;
-
-        // Optimization: if super_admin is present, return true immediately
         if (userRoleKeys.includes("super_admin")) return true;
 
-        // 2. Check if ANY of the roles has the permission.
-        const hasPermission = await db
-            .select({ id: permissions.id })
-            .from(rolePermissions)
-            .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-            .where(
-                and(
-                    inArray(rolePermissions.roleId, userRoleIds),
-                    eq(permissions.key, actionKey)
-                )
-            )
-            .limit(1);
-
-        return hasPermission.length > 0;
+        const userRoleIds = userRolesResult.map((r) => r.roleId);
+        return roleHasPermission(userRoleIds, actionKey);
     }
 }
