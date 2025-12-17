@@ -1,4 +1,4 @@
-import { Context } from "hono";
+import type { Context } from "hono";
 import { AuthzService } from "../services/authz.service";
 
 /**
@@ -52,4 +52,3 @@ export class AuthzController {
     }
   }
 }
-

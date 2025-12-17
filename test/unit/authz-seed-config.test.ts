@@ -7,6 +7,9 @@ describe("Authz seed config (Unit)", () => {
     "docs.document.listByWorkspace",
     "cms.blog_entry.listAdmin",
     "cms.blog_entry.updateMeta",
+    "cms.content.create",
+    "cms.content.listPublished",
+    "cms.content.getPublishedBySlug",
     "cms.templates.listGlobal",
     "cms.content_types.listForWorkspace",
   ] as const;
@@ -39,10 +42,13 @@ describe("Authz seed config (Unit)", () => {
 
     expect(readOnly!.permissions.includes("docs.document.listByWorkspace")).toBe(true);
     expect(readOnly!.permissions.includes("cms.blog_entry.listAdmin")).toBe(true);
+    expect(readOnly!.permissions.includes("cms.content.listPublished")).toBe(true);
+    expect(readOnly!.permissions.includes("cms.content.getPublishedBySlug")).toBe(true);
     expect(readOnly!.permissions.includes("cms.templates.listGlobal")).toBe(true);
     expect(readOnly!.permissions.includes("cms.content_types.listForWorkspace")).toBe(true);
 
     expect(readOnly!.permissions.includes("docs.document.update")).toBe(false);
     expect(readOnly!.permissions.includes("cms.blog_entry.updateMeta")).toBe(false);
+    expect(readOnly!.permissions.includes("cms.content.create")).toBe(false);
   });
 });
