@@ -1,5 +1,5 @@
 import type { Context, Next } from "hono";
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 interface ApiError {
   ok: false;
@@ -16,8 +16,10 @@ function createErrorResponse(code: string, message: string, requestId: string): 
 }
 
 function tokensMatch(provided: string, expected: string): boolean {
-  if (provided.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  const key = Buffer.from(expected);
+  const providedDigest = createHmac("sha256", key).update(provided).digest();
+  const expectedDigest = createHmac("sha256", key).update(expected).digest();
+  return timingSafeEqual(providedDigest, expectedDigest);
 }
 
 export function requireInternalServiceAuth() {
@@ -56,4 +58,3 @@ export function requireInternalServiceAuth() {
     return next();
   };
 }
-
