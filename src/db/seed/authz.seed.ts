@@ -19,6 +19,11 @@ export const AUTHZ_PERMISSIONS = [
   { key: "cms.blog_entry.listAdmin", description: "List blog entries (admin)" },
   { key: "cms.blog_entry.updateMeta", description: "Update blog entry metadata" },
 
+  // CMS Generic Content
+  { key: "cms.content.create", description: "Create content" },
+  { key: "cms.content.listPublished", description: "List published content" },
+  { key: "cms.content.getPublishedBySlug", description: "Get published content by slug" },
+
   // CMS Templates / Content Types
   { key: "cms.templates.listGlobal", description: "List global templates" },
   { key: "cms.content_types.listForWorkspace", description: "List content types for workspace" },
@@ -52,6 +57,11 @@ export const AUTHZ_ROLES = [
       "cms.blog_entry.listAdmin",
       "cms.blog_entry.updateMeta",
 
+      // CMS Generic Content
+      "cms.content.create",
+      "cms.content.listPublished",
+      "cms.content.getPublishedBySlug",
+
       // CMS Templates / Content Types
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
@@ -75,6 +85,8 @@ export const AUTHZ_ROLES = [
       // New list/introspection permissions
       "docs.document.listByWorkspace",
       "cms.blog_entry.listAdmin",
+      "cms.content.listPublished",
+      "cms.content.getPublishedBySlug",
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
     ],
@@ -112,15 +124,15 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
       })
       .returning();
 
-    const roleId =
-      role?.id ??
-      (await db.query.roles.findFirst({ where: eq(schema.roles.key, roleConfig.key) }))!.id;
+    const resolvedRoleId =
+      role?.id ?? (await db.query.roles.findFirst({ where: eq(schema.roles.key, roleConfig.key) }))?.id;
+    if (!resolvedRoleId) throw new Error(`Failed to upsert role: ${roleConfig.key}`);
 
     const rolePermissionValues = roleConfig.permissions
       .map((permKey) => {
         const permissionId = permissionIdByKey.get(permKey);
         if (!permissionId) return null;
-        return { roleId, permissionId };
+        return { roleId: resolvedRoleId, permissionId };
       })
       .filter((v): v is { roleId: string; permissionId: string } => v !== null);
 
@@ -129,4 +141,3 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
     await db.insert(schema.rolePermissions).values(rolePermissionValues).onConflictDoNothing();
   }
 }
-

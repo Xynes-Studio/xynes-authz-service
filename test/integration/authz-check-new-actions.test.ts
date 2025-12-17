@@ -14,10 +14,12 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")(
   const editorUserId = `int-editor-${Date.now()}`;
   const readOnlyUserId = `int-readonly-${Date.now()}`;
 
-  const updateActions = ["docs.document.update", "cms.blog_entry.updateMeta"] as const;
+  const updateActions = ["docs.document.update", "cms.blog_entry.updateMeta", "cms.content.create"] as const;
   const listActions = [
     "docs.document.listByWorkspace",
     "cms.blog_entry.listAdmin",
+    "cms.content.listPublished",
+    "cms.content.getPublishedBySlug",
     "cms.templates.listGlobal",
     "cms.content_types.listForWorkspace",
   ] as const;

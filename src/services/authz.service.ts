@@ -25,7 +25,7 @@ export class AuthzService {
         // 2. Check specific permissions
         for (const role of userRoleKeys) {
             const perms = rolePermissionsMap[role];
-            if (perms && perms.includes(targetPermissionKey)) {
+            if (perms?.includes(targetPermissionKey)) {
                 return true;
             }
         }

@@ -41,6 +41,22 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
         expect(allowed).toBe(false);
     });
 
+    test("should allow read_only for cms.content list/get but deny create", () => {
+        const permissionsMap = {
+            "read_only": ["cms.content.listPublished", "cms.content.getPublishedBySlug"]
+        };
+
+        expect(
+            AuthzService.resolvePermission(["read_only"], permissionsMap, "cms.content.listPublished")
+        ).toBe(true);
+        expect(
+            AuthzService.resolvePermission(["read_only"], permissionsMap, "cms.content.getPublishedBySlug")
+        ).toBe(true);
+        expect(
+            AuthzService.resolvePermission(["read_only"], permissionsMap, "cms.content.create")
+        ).toBe(false);
+    });
+
     test("should allow if role has permission", () => {
         const allowed = AuthzService.resolvePermission(
             ["editor"], 

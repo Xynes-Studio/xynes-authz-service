@@ -13,9 +13,11 @@ Built with **Bun**, **Hono**, **Drizzle ORM**, and **PostgreSQL** (Supabase).
     - `src/db/seed`: Idempotent seed logic (upsert by key).
 - **Testing**:
     - **TDD**: Tests written before/concurrently with code.
-    - **Coverage**: Minimum **75%** via `bun test --coverage` (see `bun run test:coverage`).
+    - **Coverage**: Minimum **80%** via `bun test --coverage` (see `bun run test:coverage`).
     - **Segregation**: `test/unit/**`, `test/integration/**`, `test/feature/**`.
 - **Linting**: Standard Bun/TS configuration.
+
+Testing ADR reference: `xynes-cms-core/docs/adr/001-testing-strategy.md`.
 
 ## Setup
 1. `bun install`
@@ -76,13 +78,16 @@ The service is seeded with the following roles:
 - **read_only**: Read-only access to Documents and CMS entries.
 - **super_admin**: System-wide full access.
 
-New permissions added (AUTHZ-COVERAGE-1):
+New permissions added (AUTHZ-COVERAGE-1 + AUTHZ-CONTENT-2):
 - `docs.document.update`
 - `docs.document.listByWorkspace`
 - `cms.blog_entry.listAdmin`
 - `cms.blog_entry.updateMeta`
 - `cms.templates.listGlobal`
 - `cms.content_types.listForWorkspace`
+- `cms.content.create`
+- `cms.content.listPublished`
+- `cms.content.getPublishedBySlug`
 
 Dev docs:
 - `docs/DEV.md`

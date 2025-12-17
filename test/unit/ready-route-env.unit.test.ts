@@ -5,7 +5,6 @@ import { createReadyRoute } from "../../src/routes/ready.route";
 describe("createReadyRoute (Unit)", () => {
   test("returns 503 when DATABASE_URL is missing", async () => {
     const prev = process.env.DATABASE_URL;
-    // biome-ignore lint/performance/noDelete: test needs to simulate missing env
     delete process.env.DATABASE_URL;
 
     try {
@@ -21,4 +20,3 @@ describe("createReadyRoute (Unit)", () => {
     }
   });
 });
-

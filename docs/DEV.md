@@ -42,7 +42,18 @@ Seed the database (safe to run multiple times):
 - `bun run seed`
 
 ## Testing Strategy (TDD + Coverage)
-Follow the testing ADR standard (unit → integration → feature) and keep coverage ≥ 75%.
+Follow the testing ADR standard (unit → integration → feature) and keep coverage ≥ 80%.
+
+Reference ADR: `xynes-cms-core/docs/adr/001-testing-strategy.md` (baseline 75% line/branch; this service targets 80%+).
+
+## Environment Files
+This service defaults to `.env.dev` (used in Docker/dev workflows). For local development against the SSH tunnel, use `.env.localhost`.
+
+Examples:
+- Dev (default): `bun run dev`
+- Dev (localhost env): `XYNES_ENV_FILE=.env.localhost bun run dev`
+- Unit tests: `bun --env-file=.env.dev test test/unit`
+- Integration tests: `RUN_INTEGRATION_TESTS=true bun --env-file=.env.localhost test test/integration`
 
 ## Internal Auth (SEC-INT-1)
 
