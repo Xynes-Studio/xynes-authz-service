@@ -18,6 +18,7 @@
 
 ## Database (Supabase via SSH tunnel)
 Integration tests and `bun run test:coverage` require Postgres to be reachable via `DATABASE_URL`.
+DB-backed suites are gated behind `RUN_INTEGRATION_TESTS=true`.
 
 If your team uses an SSH tunnel to expose the pooler locally, open it with:
 `ssh -N -L 5432:127.0.0.1:5432 xynes@<VPS_IP>`
@@ -42,6 +43,12 @@ Seed the database (safe to run multiple times):
 
 ## Testing Strategy (TDD + Coverage)
 Follow the testing ADR standard (unit → integration → feature) and keep coverage ≥ 75%.
+
+## Internal Auth (SEC-INT-1)
+
+`POST /authz/check` is service-to-service and now requires:
+- Env: `INTERNAL_SERVICE_TOKEN`
+- Header: `X-Internal-Service-Token: <token>`
 
 Suggested workflow for new RBAC actions:
 1. Add/adjust unit tests for seed config and permission checks (`test/unit/**`)
