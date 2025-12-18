@@ -1,5 +1,4 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { db } from "../../src/db";
 import { userRoles, roles, permissions, rolePermissions } from "../../src/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import app from "../../src/index";
@@ -7,16 +6,20 @@ import { Hono } from "hono";
 import { createReadyRoute } from "../../src/routes/ready.route";
 import { seedAuthz } from "../../src/db/seed/authz.seed";
 import { INTERNAL_SERVICE_TOKEN } from "../support/internal-auth";
+import { randomUUID } from "node:crypto";
 
 // Integration test suite
 describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration (DB)", () => {
-    const TEST_WORKSPACE_ID = `int-test-work-${Date.now()}`;
-    const TEST_USER_ID = `int-test-user-${Date.now()}`;
+    type CheckSuccess = { ok: true; data: { allowed: boolean } };
+    let db: typeof import("../../src/db")["db"];
+    const TEST_WORKSPACE_ID = randomUUID();
+    const TEST_USER_ID = randomUUID();
 
     const LEGACY_ROLE_KEY = `editor_legacy_${Date.now()}`;
     let legacyRoleId: string | null = null;
 
     beforeAll(async () => {
+        ({ db } = await import("../../src/db"));
         await seedAuthz({ db });
 
         const seededRoles = await db
@@ -58,14 +61,16 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
         });
         
         expect(res.status).toBe(200);
-        const body = await res.json() as any;
+        const body = (await res.json()) as CheckSuccess;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
     }, 15_000);
 
     test("POST /authz/check - should allow workspace_owner", async () => {
-        const USER_OWNER = `user-owner-${Date.now()}`;
-        const ownerId = (await db.query.roles.findFirst({ where: eq(roles.key, "workspace_owner") }))!.id;
+        const USER_OWNER = randomUUID();
+        const ownerRole = await db.query.roles.findFirst({ where: eq(roles.key, "workspace_owner") });
+        if (!ownerRole) throw new Error("Expected workspace_owner role to exist");
+        const ownerId = ownerRole.id;
         await db.insert(userRoles).values({ workspaceId: TEST_WORKSPACE_ID, userId: USER_OWNER, roleId: ownerId }).onConflictDoNothing();
 
         const res = await app.request("/authz/check", {
@@ -76,14 +81,16 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
                 "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
             }),
         });
-        const body = await res.json() as any;
+        const body = (await res.json()) as CheckSuccess;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
     }, 15_000);
 
      test("POST /authz/check - should allow content_editor to create", async () => {
-        const USER_EDITOR = `user-editor-${Date.now()}`;
-        const editorId = (await db.query.roles.findFirst({ where: eq(roles.key, "content_editor") }))!.id;
+        const USER_EDITOR = randomUUID();
+        const editorRole = await db.query.roles.findFirst({ where: eq(roles.key, "content_editor") });
+        if (!editorRole) throw new Error("Expected content_editor role to exist");
+        const editorId = editorRole.id;
         await db.insert(userRoles).values({ workspaceId: TEST_WORKSPACE_ID, userId: USER_EDITOR, roleId: editorId }).onConflictDoNothing();
 
         const res = await app.request("/authz/check", {
@@ -94,14 +101,16 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
                 "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
             }),
         });
-        const body = await res.json() as any;
+        const body = (await res.json()) as CheckSuccess;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
     }, 15_000);
 
     test("POST /authz/check - should allow read_only to read but NOT create", async () => {
-        const USER_READONLY = `user-readonly-${Date.now()}`;
-        const roId = (await db.query.roles.findFirst({ where: eq(roles.key, "read_only") }))!.id;
+        const USER_READONLY = randomUUID();
+        const roRole = await db.query.roles.findFirst({ where: eq(roles.key, "read_only") });
+        if (!roRole) throw new Error("Expected read_only role to exist");
+        const roId = roRole.id;
         await db.insert(userRoles).values({ workspaceId: TEST_WORKSPACE_ID, userId: USER_READONLY, roleId: roId }).onConflictDoNothing();
 
         // Read (Allowed)
@@ -113,7 +122,7 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
                 "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
             }),
         });
-        const bodyRead = await resRead.json() as any;
+        const bodyRead = (await resRead.json()) as CheckSuccess;
         expect(bodyRead.ok).toBe(true);
         expect(bodyRead.data.allowed).toBe(true);
 
@@ -126,7 +135,7 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
                 "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
             }),
         });
-        const bodyCreate = await resCreate.json() as any;
+        const bodyCreate = (await resCreate.json()) as CheckSuccess;
         expect(bodyCreate.ok).toBe(true);
         expect(bodyCreate.data.allowed).toBe(false);
     }, 15_000);
@@ -142,7 +151,9 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
             description: "Editor Legacy"
         }).onConflictDoUpdate({ target: roles.key, set: { description: "Editor Legacy" } }).returning();
 
-        const roleId = editorRole ? editorRole.id : (await db.query.roles.findFirst({ where: eq(roles.key, EDITOR_ROLE_KEY) }))!.id;
+        const roleId =
+            editorRole?.id ?? (await db.query.roles.findFirst({ where: eq(roles.key, EDITOR_ROLE_KEY) }))?.id;
+        if (!roleId) throw new Error("Expected legacy role id to be resolved");
         legacyRoleId = roleId;
 
         // Assign permission
@@ -152,7 +163,7 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
         await db.insert(rolePermissions).values({ roleId, permissionId: perm.id }).onConflictDoNothing();
 
         // Assign to NEW test user
-        const USER_2 = `user-editor-legacy-${Date.now()}`;
+        const USER_2 = randomUUID();
         await db.insert(userRoles).values({
             workspaceId: TEST_WORKSPACE_ID,
             userId: USER_2,
@@ -173,7 +184,7 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
         });
         
         expect(res.status).toBe(200);
-        const body = await res.json() as any;
+        const body = (await res.json()) as CheckSuccess;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(true);
     }, 15_000);
@@ -182,8 +193,8 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
         const res = await app.request("/authz/check", {
             method: "POST",
             body: JSON.stringify({
-                userId: "unknown",
-                workspaceId: "unknown",
+                userId: randomUUID(),
+                workspaceId: randomUUID(),
                 actionKey: "docs.document.create"
             }),
             headers: new Headers({
@@ -193,7 +204,7 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
         });
         
         expect(res.status).toBe(200);
-        const body = await res.json() as any;
+        const body = (await res.json()) as CheckSuccess;
         expect(body.ok).toBe(true);
         expect(body.data.allowed).toBe(false);
     }, 15_000);
@@ -212,14 +223,14 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")("Authz Integration
     test("GET /health should return status ok", async () => {
         const res = await app.request("/health");
         expect(res.status).toBe(200);
-        const body = await res.json() as any;
+        const body = await res.json();
         expect(body).toEqual({ status: "ok", service: "xynes-authz-service" });
     }, 15_000);
 
     test("GET /ready should return status ready when db reachable", async () => {
         const res = await app.request("/ready");
         expect(res.status).toBe(200);
-        const body = await res.json() as any;
+        const body = await res.json();
         expect(body).toEqual({ status: "ready" });
     }, 15_000);
 

@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { AuthzService } from "../../src/services/authz.service";
+import { resolvePermission } from "../../src/services/authz.service";
 
 describe("AuthzService.resolvePermission (Pure Unit)", () => {
     test("should allow super_admin", () => {
-        const allowed = AuthzService.resolvePermission(["super_admin"], {}, "any.action");
+        const allowed = resolvePermission(["super_admin"], {}, "any.action");
         expect(allowed).toBe(true);
     });
 
@@ -13,7 +13,7 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
         const permissionsMap = {
             "workspace_owner": ["docs.document.create", "docs.document.read"]
         };
-        const allowed = AuthzService.resolvePermission(["workspace_owner"], permissionsMap, "docs.document.create");
+        const allowed = resolvePermission(["workspace_owner"], permissionsMap, "docs.document.create");
         expect(allowed).toBe(true);
     });
 
@@ -21,7 +21,7 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
         const permissionsMap = {
             "content_editor": ["docs.document.create"]
         };
-        const allowed = AuthzService.resolvePermission(["content_editor"], permissionsMap, "docs.document.create");
+        const allowed = resolvePermission(["content_editor"], permissionsMap, "docs.document.create");
         expect(allowed).toBe(true);
     });
 
@@ -29,7 +29,7 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
         const permissionsMap = {
             "read_only": ["docs.document.read"]
         };
-        const allowed = AuthzService.resolvePermission(["read_only"], permissionsMap, "docs.document.read");
+        const allowed = resolvePermission(["read_only"], permissionsMap, "docs.document.read");
         expect(allowed).toBe(true);
     });
 
@@ -37,7 +37,7 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
         const permissionsMap = {
             "read_only": ["docs.document.read"]
         };
-        const allowed = AuthzService.resolvePermission(["read_only"], permissionsMap, "docs.document.create");
+        const allowed = resolvePermission(["read_only"], permissionsMap, "docs.document.create");
         expect(allowed).toBe(false);
     });
 
@@ -47,18 +47,18 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
         };
 
         expect(
-            AuthzService.resolvePermission(["read_only"], permissionsMap, "cms.content.listPublished")
+            resolvePermission(["read_only"], permissionsMap, "cms.content.listPublished")
         ).toBe(true);
         expect(
-            AuthzService.resolvePermission(["read_only"], permissionsMap, "cms.content.getPublishedBySlug")
+            resolvePermission(["read_only"], permissionsMap, "cms.content.getPublishedBySlug")
         ).toBe(true);
         expect(
-            AuthzService.resolvePermission(["read_only"], permissionsMap, "cms.content.create")
+            resolvePermission(["read_only"], permissionsMap, "cms.content.create")
         ).toBe(false);
     });
 
     test("should allow if role has permission", () => {
-        const allowed = AuthzService.resolvePermission(
+        const allowed = resolvePermission(
             ["editor"], 
             { "editor": ["docs.write"] }, 
             "docs.write"
@@ -67,7 +67,7 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
     });
 
     test("should deny if role does not have permission", () => {
-        const allowed = AuthzService.resolvePermission(
+        const allowed = resolvePermission(
             ["viewer"], 
             { "viewer": ["docs.read"] }, 
             "docs.write"
@@ -76,7 +76,7 @@ describe("AuthzService.resolvePermission (Pure Unit)", () => {
     });
 
     test("should deny if no roles", () => {
-         const allowed = AuthzService.resolvePermission([], {}, "docs.read");
+         const allowed = resolvePermission([], {}, "docs.read");
          expect(allowed).toBe(false);
     });
 });

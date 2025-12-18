@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../schema";
 
@@ -84,7 +84,6 @@ export const AUTHZ_ROLES = [
 
       // New list/introspection permissions
       "docs.document.listByWorkspace",
-      "cms.blog_entry.listAdmin",
       "cms.content.listPublished",
       "cms.content.getPublishedBySlug",
       "cms.templates.listGlobal",
@@ -136,8 +135,22 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
       })
       .filter((v): v is { roleId: string; permissionId: string } => v !== null);
 
-    if (rolePermissionValues.length === 0) continue;
+    if (rolePermissionValues.length > 0) {
+      await db.insert(schema.rolePermissions).values(rolePermissionValues).onConflictDoNothing();
+    }
 
-    await db.insert(schema.rolePermissions).values(rolePermissionValues).onConflictDoNothing();
+    if (roleConfig.key === "read_only") {
+      const adminListPermissionId = permissionIdByKey.get("cms.blog_entry.listAdmin");
+      if (adminListPermissionId) {
+        await db
+          .delete(schema.rolePermissions)
+          .where(
+            and(
+              eq(schema.rolePermissions.roleId, resolvedRoleId),
+              eq(schema.rolePermissions.permissionId, adminListPermissionId)
+            )
+          );
+      }
+    }
   }
 }
