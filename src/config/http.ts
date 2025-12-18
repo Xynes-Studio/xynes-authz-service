@@ -1,0 +1,2 @@
+export const AUTHZ_CHECK_MAX_BODY_BYTES = 8 * 1024;
+

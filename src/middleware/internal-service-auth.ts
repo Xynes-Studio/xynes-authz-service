@@ -1,19 +1,6 @@
 import type { Context, Next } from "hono";
 import { createHmac, timingSafeEqual } from "node:crypto";
-
-interface ApiError {
-  ok: false;
-  error: { code: string; message: string };
-  meta?: { requestId: string };
-}
-
-function generateRequestId(): string {
-  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function createErrorResponse(code: string, message: string, requestId: string): ApiError {
-  return { ok: false, error: { code, message }, meta: { requestId } };
-}
+import { createErrorResponse, getOrCreateRequestId } from "../lib/api-error";
 
 function tokensMatch(provided: string, expected: string): boolean {
   const key = Buffer.from(expected);
@@ -24,7 +11,7 @@ function tokensMatch(provided: string, expected: string): boolean {
 
 export function requireInternalServiceAuth() {
   return async (c: Context, next: Next) => {
-    const requestId = c.get("requestId") || generateRequestId();
+    const requestId = getOrCreateRequestId(c);
     const expected = process.env.INTERNAL_SERVICE_TOKEN;
 
     if (!expected) {

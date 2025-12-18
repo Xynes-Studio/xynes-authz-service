@@ -54,20 +54,36 @@ Checks if a user has permission to perform an action in a workspace.
   "actionKey": "docs.document.create"
 }
 ```
+Notes:
+- Request body is strictly validated (rejects missing/extra fields).
+- Oversized bodies are rejected (service-level max body size).
+
 ### Response Success (200)
 ```json
-{ "allowed": true }
+{
+  "ok": true,
+  "data": { "allowed": true },
+  "meta": { "requestId": "req-..." }
+}
+```
+
+### Response Error (400)
+Malformed/missing/invalid fields or oversized body:
+```json
+{
+  "ok": false,
+  "error": { "code": "VALIDATION_ERROR", "message": "Invalid request body" },
+  "meta": { "requestId": "req-..." }
+}
 ```
 
 ### Response Error (500)
-If the service cannot check permissions (e.g. database down), it returns 500 with a structured error:
+If the service cannot check permissions (e.g. database down), it returns:
 ```json
 {
-  "allowed": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "An internal error occurred while checking permissions."
-  }
+  "ok": false,
+  "error": { "code": "INTERNAL_ERROR", "message": "An internal error occurred while checking permissions." },
+  "meta": { "requestId": "req-..." }
 }
 ```
 

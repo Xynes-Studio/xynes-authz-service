@@ -13,6 +13,24 @@ type AuthzSeedDb = {
   rolePermissions: Set<string>;
 };
 
+function collectSqlParams(sqlLike: unknown, out: unknown[] = []) {
+  if (!sqlLike || typeof sqlLike !== "object") return out;
+  const maybeQueryChunks = sqlLike as { queryChunks?: unknown[] };
+  if (Array.isArray(maybeQueryChunks.queryChunks)) {
+    for (const chunk of maybeQueryChunks.queryChunks) collectSqlParams(chunk, out);
+    return out;
+  }
+  if (Array.isArray(sqlLike)) {
+    for (const item of sqlLike) collectSqlParams(item, out);
+    return out;
+  }
+  const maybeParam = sqlLike as { value?: unknown; constructor?: { name?: string } };
+  if (maybeParam.constructor?.name === "Param" && "value" in maybeParam) {
+    out.push(maybeParam.value);
+  }
+  return out;
+}
+
 function isIdKeySelection(selection: unknown): selection is { id: unknown; key: unknown } {
   return Boolean((selection as { id?: unknown })?.id && (selection as { key?: unknown })?.key);
 }
@@ -136,6 +154,30 @@ class FakeAuthzDb {
       },
     };
   }
+
+  delete(table: unknown) {
+    const dbState: AuthzSeedDb = this;
+    return {
+      async where(whereClause: unknown) {
+        if (table !== schema.rolePermissions) throw new Error("FakeAuthzDb: unsupported delete table");
+
+        const params = collectSqlParams(whereClause)
+          .filter((v): v is string => typeof v === "string" && v.length > 0);
+        const [roleId, ...rest] = params;
+        if (!roleId) return;
+
+        const permissionId = rest[0];
+        if (permissionId) {
+          dbState.rolePermissions.delete(`${roleId}|${permissionId}`);
+          return;
+        }
+
+        for (const entry of [...dbState.rolePermissions]) {
+          if (entry.startsWith(`${roleId}|`)) dbState.rolePermissions.delete(entry);
+        }
+      },
+    };
+  }
 }
 
 describe("seedAuthz (Unit, in-memory DB)", () => {
@@ -180,5 +222,22 @@ describe("seedAuthz (Unit, in-memory DB)", () => {
     expect(has("workspace_owner", "cms.content.getPublishedBySlug")).toBe(true);
     expect(has("content_editor", "cms.content.getPublishedBySlug")).toBe(true);
     expect(has("read_only", "cms.content.getPublishedBySlug")).toBe(true);
+  });
+
+  test("removes cms.blog_entry.listAdmin from read_only on reseed", async () => {
+    const db = new FakeAuthzDb();
+    await seedAuthz({ db: db as unknown as AuthzDb });
+
+    const readOnlyRoleId = db.roles.get("read_only")?.id;
+    expect(readOnlyRoleId).toBeTruthy();
+
+    const listAdminPermId = [...db.permissions.values()].find((p) => p.key === "cms.blog_entry.listAdmin")?.id;
+    expect(listAdminPermId).toBeTruthy();
+
+    db.rolePermissions.add(`${readOnlyRoleId}|${listAdminPermId}`);
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${listAdminPermId}`)).toBe(true);
+
+    await seedAuthz({ db: db as unknown as AuthzDb });
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${listAdminPermId}`)).toBe(false);
   });
 });

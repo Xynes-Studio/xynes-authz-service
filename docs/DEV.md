@@ -61,6 +61,15 @@ Examples:
 - Env: `INTERNAL_SERVICE_TOKEN`
 - Header: `X-Internal-Service-Token: <token>`
 
+## `/authz/check` Validation & Limits (SEC-AUTHZ-1)
+- Strict JSON schema validation (rejects missing/extra fields) using `zod`:
+  - `userId`: UUID string
+  - `workspaceId`: UUID string
+  - `actionKey`: non-empty string (max 256)
+- Max request body size is capped (service-level) to reduce abuse/DoS risk.
+- Invalid/malformed/oversized requests return `400` with the standard error envelope:
+  - `{ ok: false, error: { code, message }, meta: { requestId } }`
+
 Suggested workflow for new RBAC actions:
 1. Add/adjust unit tests for seed config and permission checks (`test/unit/**`)
 2. Add DB-backed integration tests validating seed + `/authz/check` (`test/integration/**`)

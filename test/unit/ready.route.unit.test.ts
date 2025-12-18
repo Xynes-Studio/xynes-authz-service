@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { createReadyRoute } from "../../src/routes/ready.route";
 
 describe("Ready Endpoint (Unit)", () => {
+    type NotReadyResponse = { status: "not_ready"; error: string };
     const checkMock = mock();
 
     beforeEach(() => {
@@ -28,7 +29,7 @@ describe("Ready Endpoint (Unit)", () => {
 
         const res = await app.request("/ready");
         expect(res.status).toBe(503);
-        const body = await res.json() as any;
+        const body = (await res.json()) as NotReadyResponse;
         expect(body.status).toBe("not_ready");
         expect(body.error).toContain("db down");
     });
