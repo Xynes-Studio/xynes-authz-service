@@ -49,6 +49,10 @@ Reference ADR: `xynes-cms-core/docs/adr/001-testing-strategy.md` (baseline 75% l
 ## Environment Files
 This service defaults to `.env.dev` (used in Docker/dev workflows). For local development against the SSH tunnel, use `.env.localhost`.
 
+Docker standard:
+- `.env.dev` should use `db.local:5432` (works inside `docker-compose.dev.yml` via `extra_hosts`).
+- For one-off containers (e.g. `docker run ... psql ...`) prefer `host.docker.internal:5432` on Docker Desktop, or pass `--add-host db.local:host-gateway`.
+
 Examples:
 - Dev (default): `bun run dev`
 - Dev (localhost env): `XYNES_ENV_FILE=.env.localhost bun run dev`
@@ -74,3 +78,13 @@ Suggested workflow for new RBAC actions:
 1. Add/adjust unit tests for seed config and permission checks (`test/unit/**`)
 2. Add DB-backed integration tests validating seed + `/authz/check` (`test/integration/**`)
 3. Only then update seed/mapping code (`src/db/seed/**`)
+
+## ACCOUNTS-SCHEMA-1 Verification (DB)
+Expected state after infra + authz migrations:
+- `identity.users`
+- `platform.workspaces` (FK `created_by -> identity.users(id)`)
+- `platform.workspace_members` (PK `(workspace_id, user_id)`, FKs to workspaces/users)
+- `authz.user_roles` (PK `(user_id, workspace_id, role_key)`, FK `role_key -> authz.roles(key)`)
+
+If you don’t have `psql` installed locally, you can run it via Docker:
+`docker run --rm -i postgres:16-alpine psql "$DATABASE_URL" -c "select 1"`
