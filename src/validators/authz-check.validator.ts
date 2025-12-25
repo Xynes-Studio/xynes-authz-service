@@ -9,4 +9,3 @@ export const authzCheckRequestSchema = z
   .strict();
 
 export type AuthzCheckRequest = z.infer<typeof authzCheckRequestSchema>;
-

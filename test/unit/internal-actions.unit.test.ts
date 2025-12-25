@@ -23,7 +23,10 @@ describe("Internal Authz Actions (unit)", () => {
         "Content-Type": "application/json",
         "X-Internal-Service-Token": "unit-test-token",
       },
-      body: JSON.stringify({ actionKey: "authz.assignRole", payload: { roleKey: "workspace_owner" } }),
+      body: JSON.stringify({
+        actionKey: "authz.assignRole",
+        payload: { roleKey: "workspace_owner" },
+      }),
     });
 
     expect(res.status).toBe(400);

@@ -7,30 +7,51 @@ export type AuthzDb = PostgresJsDatabase<typeof schema>;
 export const AUTHZ_PERMISSIONS = [
   // Workspaces (global)
   { key: "accounts.workspaces.create", description: "Create workspaces" },
-  { key: "accounts.workspaces.listForUser", description: "List workspaces for user" },
+  {
+    key: "accounts.workspaces.listForUser",
+    description: "List workspaces for user",
+  },
 
   // Documents
   { key: "docs.document.create", description: "Create documents" },
   { key: "docs.document.read", description: "Read documents" },
   { key: "docs.document.update", description: "Update documents" },
-  { key: "docs.document.listByWorkspace", description: "List documents by workspace" },
+  {
+    key: "docs.document.listByWorkspace",
+    description: "List documents by workspace",
+  },
 
   // CMS Blog
   { key: "cms.blog_entry.create", description: "Create blog entries" },
   { key: "cms.blog_entry.read", description: "Read blog entries" },
-  { key: "cms.blog_entry.listPublished", description: "List published blog entries" },
-  { key: "cms.blog_entry.getPublishedBySlug", description: "Get published blog entry by slug" },
+  {
+    key: "cms.blog_entry.listPublished",
+    description: "List published blog entries",
+  },
+  {
+    key: "cms.blog_entry.getPublishedBySlug",
+    description: "Get published blog entry by slug",
+  },
   { key: "cms.blog_entry.listAdmin", description: "List blog entries (admin)" },
-  { key: "cms.blog_entry.updateMeta", description: "Update blog entry metadata" },
+  {
+    key: "cms.blog_entry.updateMeta",
+    description: "Update blog entry metadata",
+  },
 
   // CMS Generic Content
   { key: "cms.content.create", description: "Create content" },
   { key: "cms.content.listPublished", description: "List published content" },
-  { key: "cms.content.getPublishedBySlug", description: "Get published content by slug" },
+  {
+    key: "cms.content.getPublishedBySlug",
+    description: "Get published content by slug",
+  },
 
   // CMS Templates / Content Types
   { key: "cms.templates.listGlobal", description: "List global templates" },
-  { key: "cms.content_types.listForWorkspace", description: "List content types for workspace" },
+  {
+    key: "cms.content_types.listForWorkspace",
+    description: "List content types for workspace",
+  },
 
   // CMS Comments
   { key: "cms.comments.create", description: "Create comments" },
@@ -140,8 +161,14 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
       .returning();
 
     const resolvedRoleId =
-      role?.id ?? (await db.query.roles.findFirst({ where: eq(schema.roles.key, roleConfig.key) }))?.id;
-    if (!resolvedRoleId) throw new Error(`Failed to upsert role: ${roleConfig.key}`);
+      role?.id ??
+      (
+        await db.query.roles.findFirst({
+          where: eq(schema.roles.key, roleConfig.key),
+        })
+      )?.id;
+    if (!resolvedRoleId)
+      throw new Error(`Failed to upsert role: ${roleConfig.key}`);
 
     const rolePermissionValues = roleConfig.permissions
       .map((permKey) => {
@@ -152,11 +179,16 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
       .filter((v): v is { roleId: string; permissionId: string } => v !== null);
 
     if (rolePermissionValues.length > 0) {
-      await db.insert(schema.rolePermissions).values(rolePermissionValues).onConflictDoNothing();
+      await db
+        .insert(schema.rolePermissions)
+        .values(rolePermissionValues)
+        .onConflictDoNothing();
     }
 
     if (roleConfig.key === "read_only") {
-      const adminListPermissionId = permissionIdByKey.get("cms.blog_entry.listAdmin");
+      const adminListPermissionId = permissionIdByKey.get(
+        "cms.blog_entry.listAdmin"
+      );
       if (adminListPermissionId) {
         await db
           .delete(schema.rolePermissions)
