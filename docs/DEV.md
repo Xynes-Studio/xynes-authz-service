@@ -36,10 +36,18 @@ Apply migrations:
 
 ## Seeding (Idempotent)
 RBAC permissions and role mappings are defined in:
+
 - `src/db/seed/authz.seed.ts`
 
 Seed the database (safe to run multiple times):
+
 - `bun run seed`
+
+### Workspace Invites (INVITES-CORE-1)
+
+- New permission seeded: `accounts.invites.create`
+  - Used by the accounts service when creating workspace invites
+  - Enforced via `POST /authz/check` from the gateway/accounts-service client
 
 ## Testing Strategy (TDD + Coverage)
 Follow the testing ADR standard (unit → integration → feature) and keep coverage ≥ 80%.

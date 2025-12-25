@@ -12,6 +12,12 @@ export const AUTHZ_PERMISSIONS = [
     description: "List workspaces for user",
   },
 
+  // Workspace Invites
+  {
+    key: "accounts.invites.create",
+    description: "Create workspace invites",
+  },
+
   // Documents
   { key: "docs.document.create", description: "Create documents" },
   { key: "docs.document.read", description: "Read documents" },
