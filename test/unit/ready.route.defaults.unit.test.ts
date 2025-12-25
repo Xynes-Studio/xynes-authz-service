@@ -35,7 +35,12 @@ describe("Ready Endpoint defaults (unit)", () => {
     process.env.DATABASE_URL = "postgres://unused";
 
     let called = false;
-    const check = async ({ databaseUrl }: { databaseUrl: string; schemaName?: string }) => {
+    const check = async ({
+      databaseUrl,
+    }: {
+      databaseUrl: string;
+      schemaName?: string;
+    }) => {
       called = true;
       expect(databaseUrl).toBe("postgres://unused");
     };

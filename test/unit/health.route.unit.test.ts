@@ -9,6 +9,9 @@ describe("Health Endpoint (unit)", () => {
 
     const res = await app.request("/health");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ status: "ok", service: "xynes-authz-service" });
+    expect(await res.json()).toEqual({
+      status: "ok",
+      service: "xynes-authz-service",
+    });
   });
 });

@@ -9,7 +9,9 @@ export type AssignRoleInput = {
 type AssignRoleDeps = {
   db?: {
     insert: (table: unknown) => {
-      values: (values: unknown) => { onConflictDoNothing: () => Promise<unknown> };
+      values: (values: unknown) => {
+        onConflictDoNothing: () => Promise<unknown>;
+      };
     };
   };
 };
