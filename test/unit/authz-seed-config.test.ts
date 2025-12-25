@@ -3,6 +3,8 @@ import { AUTHZ_PERMISSIONS, AUTHZ_ROLES } from "../../src/db/seed/authz.seed";
 
 describe("Authz seed config (Unit)", () => {
   const newPermissionKeys = [
+    "accounts.workspaces.create",
+    "accounts.workspaces.listForUser",
     "docs.document.update",
     "docs.document.listByWorkspace",
     "cms.blog_entry.listAdmin",
@@ -36,6 +38,11 @@ describe("Authz seed config (Unit)", () => {
     for (const key of newPermissionKeys) expect(editor?.permissions.includes(key)).toBe(true);
   });
 
+  test("includes workspace_member role", () => {
+    const member = AUTHZ_ROLES.find((r) => r.key === "workspace_member");
+    expect(member).toBeTruthy();
+  });
+
   test("read_only only gets list/introspect permissions", () => {
     const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
     expect(readOnly).toBeTruthy();
@@ -45,10 +52,12 @@ describe("Authz seed config (Unit)", () => {
     expect(readOnly?.permissions.includes("cms.content.getPublishedBySlug")).toBe(true);
     expect(readOnly?.permissions.includes("cms.templates.listGlobal")).toBe(true);
     expect(readOnly?.permissions.includes("cms.content_types.listForWorkspace")).toBe(true);
+    expect(readOnly?.permissions.includes("accounts.workspaces.listForUser")).toBe(true);
 
     expect(readOnly?.permissions.includes("cms.blog_entry.listAdmin")).toBe(false);
     expect(readOnly?.permissions.includes("docs.document.update")).toBe(false);
     expect(readOnly?.permissions.includes("cms.blog_entry.updateMeta")).toBe(false);
     expect(readOnly?.permissions.includes("cms.content.create")).toBe(false);
+    expect(readOnly?.permissions.includes("accounts.workspaces.create")).toBe(false);
   });
 });

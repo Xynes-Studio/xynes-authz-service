@@ -11,6 +11,11 @@ type CheckPermissionDeps = {
   getDb: () => Promise<{ db: unknown }>;
 };
 
+const AUTHENTICATED_GLOBAL_ACTION_KEYS = new Set<string>([
+  "accounts.workspaces.create",
+  "accounts.workspaces.listForUser",
+]);
+
 /**
  * Pure function to resolve permission based on roles and permissions map.
  * Useful for unit testing logic without DB.
@@ -35,10 +40,16 @@ export function resolvePermission(
  */
 export async function checkPermission(
   userId: string,
-  workspaceId: string,
+  workspaceId: string | null,
   actionKey: string,
   deps?: Partial<CheckPermissionDeps>
 ): Promise<boolean> {
+  // Global (non-workspace-scoped) permissions.
+  // We currently allow a minimal set for any authenticated user.
+  if (workspaceId === null) {
+    return AUTHENTICATED_GLOBAL_ACTION_KEYS.has(actionKey);
+  }
+
   const getDb = deps?.getDb ?? (async () => import("../db"));
 
   const fetchUserRoles =

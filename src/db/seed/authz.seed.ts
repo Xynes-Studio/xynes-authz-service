@@ -5,6 +5,10 @@ import * as schema from "../schema";
 export type AuthzDb = PostgresJsDatabase<typeof schema>;
 
 export const AUTHZ_PERMISSIONS = [
+  // Workspaces (global)
+  { key: "accounts.workspaces.create", description: "Create workspaces" },
+  { key: "accounts.workspaces.listForUser", description: "List workspaces for user" },
+
   // Documents
   { key: "docs.document.create", description: "Create documents" },
   { key: "docs.document.read", description: "Read documents" },
@@ -40,6 +44,11 @@ export const AUTHZ_ROLES = [
     permissions: AUTHZ_PERMISSIONS.map((p) => p.key),
   },
   {
+    key: "workspace_member",
+    description: "Workspace Member",
+    permissions: [],
+  },
+  {
     key: "content_editor",
     description: "Content Editor",
     permissions: [
@@ -69,6 +78,10 @@ export const AUTHZ_ROLES = [
       // CMS Comments
       "cms.comments.create",
       "cms.comments.listForEntry",
+
+      // Workspaces (global)
+      "accounts.workspaces.create",
+      "accounts.workspaces.listForUser",
     ],
   },
   {
@@ -88,6 +101,9 @@ export const AUTHZ_ROLES = [
       "cms.content.getPublishedBySlug",
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
+
+      // Workspaces (global)
+      "accounts.workspaces.listForUser",
     ],
   },
   {
