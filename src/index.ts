@@ -4,6 +4,7 @@ import authzRoutes from "./routes/authz.routes";
 import { healthRoute } from "./routes/health.route";
 import { readyRoute } from "./routes/ready.route";
 import { withRequestId } from "./middleware/request-id";
+import { internalRoute } from "./routes/internal/internal.route";
 
 const app = new Hono();
 
@@ -14,5 +15,6 @@ app.route("/", healthRoute);
 app.route("/", readyRoute);
 
 app.route("/authz", authzRoutes);
+app.route("/internal", internalRoute);
 
 export default app;

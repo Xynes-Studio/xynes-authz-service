@@ -65,10 +65,17 @@ Examples:
 - Env: `INTERNAL_SERVICE_TOKEN`
 - Header: `X-Internal-Service-Token: <token>`
 
+Internal role assignment is also service-to-service:
+
+- `POST /internal/authz-actions`
+  - Requires `X-Internal-Service-Token`
+  - Request envelope: `{ actionKey: "authz.assignRole", payload: { userId, workspaceId, roleKey } }`
+  - `roleKey` is restricted to: `workspace_owner` | `workspace_member`
+
 ## `/authz/check` Validation & Limits (SEC-AUTHZ-1)
 - Strict JSON schema validation (rejects missing/extra fields) using `zod`:
   - `userId`: UUID string
-  - `workspaceId`: UUID string
+  - `workspaceId`: UUID string or `null` (for global/non-workspace-scoped actions)
   - `actionKey`: non-empty string (max 256)
 - Max request body size is capped (service-level) to reduce abuse/DoS risk.
 - Invalid/malformed/oversized requests return `400` with the standard error envelope:
