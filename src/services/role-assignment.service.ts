@@ -6,8 +6,21 @@ export type AssignRoleInput = {
   roleKey: "workspace_owner" | "workspace_member";
 };
 
-export async function assignRole(input: AssignRoleInput): Promise<void> {
-  const { db } = await import("../db");
+type AssignRoleDeps = {
+  db?: {
+    insert: (table: unknown) => {
+      values: (values: unknown) => {
+        onConflictDoNothing: () => Promise<unknown>;
+      };
+    };
+  };
+};
+
+export async function assignRole(
+  input: AssignRoleInput,
+  deps: AssignRoleDeps = {}
+): Promise<void> {
+  const db = deps.db ?? (await import("../db")).db;
 
   await db
     .insert(userRoles)
