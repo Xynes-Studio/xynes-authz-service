@@ -7,7 +7,7 @@
 - Seed RBAC (idempotent): `bun run seed`
 
 ## Folder Structure (Global Standards)
-```
+```text
 xynes-authz-service/
 ├── src/
 │   ├── index.ts              # Hono app entry point
@@ -141,7 +141,7 @@ Internal role assignment is also service-to-service:
 
 ### Permission Format
 
-```
+```text
 {service}.{resource}.{action}
 ```
 

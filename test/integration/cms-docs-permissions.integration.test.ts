@@ -67,9 +67,9 @@ describe.skipIf(SKIP_INTEGRATION)(
       // Seed the database (idempotent)
       await seedAuthz({ db });
 
-      // Fetch role IDs
+      // Fetch role keys (validate roles exist)
       const roleRows = await db
-        .select({ id: roles.id, key: roles.key })
+        .select({ key: roles.key })
         .from(roles)
         .where(
           inArray(roles.key, [
@@ -79,13 +79,13 @@ describe.skipIf(SKIP_INTEGRATION)(
           ])
         );
 
-      const roleIdByKey = new Map(roleRows.map((r) => [r.key, r.id]));
+      const roleKeys = new Set(roleRows.map((r) => r.key));
 
-      const ownerRoleId = roleIdByKey.get("workspace_owner");
-      const editorRoleId = roleIdByKey.get("content_editor");
-      const readOnlyRoleId = roleIdByKey.get("read_only");
+      const ownerRoleKey = roleKeys.has("workspace_owner") ? "workspace_owner" : null;
+      const editorRoleKey = roleKeys.has("content_editor") ? "content_editor" : null;
+      const readOnlyRoleKey = roleKeys.has("read_only") ? "read_only" : null;
 
-      if (!ownerRoleId || !editorRoleId || !readOnlyRoleId) {
+      if (!ownerRoleKey || !editorRoleKey || !readOnlyRoleKey) {
         throw new Error("Required roles not found after seeding");
       }
 
@@ -96,17 +96,17 @@ describe.skipIf(SKIP_INTEGRATION)(
           {
             workspaceId: TEST_WORKSPACE_ID,
             userId: OWNER_USER_ID,
-            roleId: ownerRoleId,
+            roleKey: ownerRoleKey,
           },
           {
             workspaceId: TEST_WORKSPACE_ID,
             userId: EDITOR_USER_ID,
-            roleId: editorRoleId,
+            roleKey: editorRoleKey,
           },
           {
             workspaceId: TEST_WORKSPACE_ID,
             userId: READONLY_USER_ID,
-            roleId: readOnlyRoleId,
+            roleKey: readOnlyRoleKey,
           },
         ])
         .onConflictDoNothing();
