@@ -8,9 +8,13 @@
     "start": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run index.ts'",
     "test": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test'",
     "test:coverage": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test --coverage'",
+    "test:unit": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test ./test/unit/'",
+    "test:integration": "sh -c 'RUN_INTEGRATION_TESTS=true bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" test ./test/integration/'",
     "migrate": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" x drizzle-kit migrate'",
     "seed": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run src/scripts/seed.ts'",
-    "lint": "biome lint src test"
+    "lint": "biome lint src test",
+    "lint:fix": "biome lint --write src test",
+    "format": "biome format --write src test"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
