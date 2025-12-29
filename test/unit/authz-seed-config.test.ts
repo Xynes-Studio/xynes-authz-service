@@ -1,83 +1,177 @@
+/**
+ * AUTHZ Seed Logic Unit Tests
+ *
+ * Tests for the seed configuration and logic validation.
+ * These tests don't require a database connection.
+ */
+
 import { describe, expect, test } from "bun:test";
-import { AUTHZ_PERMISSIONS, AUTHZ_ROLES } from "../../src/db/seed/authz.seed";
+import {
+  AUTHZ_PERMISSIONS,
+  AUTHZ_ROLES,
+  type PermissionKey,
+  type RoleKey,
+} from "../../src/db/seed/permissions.config";
 
-describe("Authz seed config (Unit)", () => {
-  const newPermissionKeys = [
-    "accounts.workspaces.create",
-    "accounts.workspaces.listForUser",
-    "docs.document.update",
-    "docs.document.listByWorkspace",
-    "cms.blog_entry.listAdmin",
-    "cms.blog_entry.updateMeta",
-    "cms.content.create",
-    "cms.content.listPublished",
-    "cms.content.getPublishedBySlug",
-    "cms.templates.listGlobal",
-    "cms.content_types.listForWorkspace",
-  ] as const;
+describe("AUTHZ Seed Configuration (Unit)", () => {
+  describe("Permission Configuration", () => {
+    test("all permissions have required fields", () => {
+      for (const perm of AUTHZ_PERMISSIONS) {
+        expect(perm.key).toBeDefined();
+        expect(typeof perm.key).toBe("string");
+        expect(perm.key.length).toBeGreaterThan(0);
+        expect(perm.description).toBeDefined();
+        expect(typeof perm.description).toBe("string");
+      }
+    });
 
-  test("permission keys are unique", () => {
-    const keys = AUTHZ_PERMISSIONS.map((p) => p.key);
-    expect(new Set(keys).size).toBe(keys.length);
+    test("permission keys follow naming convention", () => {
+      // Format: service.resource.action
+      const pattern = /^[a-z_]+\.[a-z_]+\.[a-z]+[a-zA-Z]*$/;
+      for (const perm of AUTHZ_PERMISSIONS) {
+        expect(pattern.test(perm.key)).toBe(true);
+      }
+    });
+
+    test("no permission key exceeds max length", () => {
+      const MAX_KEY_LENGTH = 128;
+      for (const perm of AUTHZ_PERMISSIONS) {
+        expect(perm.key.length).toBeLessThanOrEqual(MAX_KEY_LENGTH);
+      }
+    });
+
+    test("permission keys are unique", () => {
+      const keys = AUTHZ_PERMISSIONS.map((p) => p.key);
+      expect(new Set(keys).size).toBe(keys.length);
+    });
   });
 
-  test("includes new permission keys", () => {
-    const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
-    for (const key of newPermissionKeys) expect(keys.has(key)).toBe(true);
+  describe("Role Configuration", () => {
+    test("all roles have required fields", () => {
+      for (const role of AUTHZ_ROLES) {
+        expect(role.key).toBeDefined();
+        expect(typeof role.key).toBe("string");
+        expect(role.description).toBeDefined();
+        expect(typeof role.description).toBe("string");
+        expect(Array.isArray(role.permissions)).toBe(true);
+      }
+    });
+
+    test("role keys are unique", () => {
+      const keys = AUTHZ_ROLES.map((r) => r.key);
+      expect(new Set(keys).size).toBe(keys.length);
+    });
+
+    test("required roles exist", () => {
+      const roleKeys = new Set(AUTHZ_ROLES.map((r) => r.key));
+      expect(roleKeys.has("workspace_owner")).toBe(true);
+      expect(roleKeys.has("workspace_member")).toBe(true);
+      expect(roleKeys.has("content_editor")).toBe(true);
+      expect(roleKeys.has("read_only")).toBe(true);
+      expect(roleKeys.has("super_admin")).toBe(true);
+    });
   });
 
-  test("workspace_owner has all new permissions", () => {
-    const owner = AUTHZ_ROLES.find((r) => r.key === "workspace_owner");
-    expect(owner).toBeTruthy();
-    for (const key of newPermissionKeys)
-      expect(owner?.permissions.includes(key)).toBe(true);
+  describe("Role-Permission Integrity", () => {
+    const allPermissionKeys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
+
+    test("all role permissions reference valid permission keys", () => {
+      for (const role of AUTHZ_ROLES) {
+        for (const permKey of role.permissions) {
+          expect(allPermissionKeys.has(permKey)).toBe(true);
+        }
+      }
+    });
+
+    test("workspace_owner has all permissions", () => {
+      const owner = AUTHZ_ROLES.find((r) => r.key === "workspace_owner");
+      expect(owner).toBeDefined();
+      expect(owner!.permissions.length).toBe(AUTHZ_PERMISSIONS.length);
+    });
+
+    test("super_admin has all permissions", () => {
+      const superAdmin = AUTHZ_ROLES.find((r) => r.key === "super_admin");
+      expect(superAdmin).toBeDefined();
+      expect(superAdmin!.permissions.length).toBe(AUTHZ_PERMISSIONS.length);
+    });
+
+    test("read_only has fewer permissions than content_editor", () => {
+      const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
+      const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
+      expect(readOnly).toBeDefined();
+      expect(editor).toBeDefined();
+      expect(readOnly!.permissions.length).toBeLessThan(editor!.permissions.length);
+    });
   });
 
-  test("content_editor has all new permissions", () => {
-    const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
-    expect(editor).toBeTruthy();
-    for (const key of newPermissionKeys)
-      expect(editor?.permissions.includes(key)).toBe(true);
+  describe("Type Safety", () => {
+    test("PermissionKey type matches actual keys", () => {
+      // This is a compile-time check - if it compiles, types are correct
+      const keys: PermissionKey[] = AUTHZ_PERMISSIONS.map((p) => p.key);
+      expect(keys.length).toBe(AUTHZ_PERMISSIONS.length);
+    });
+
+    test("RoleKey type matches actual keys", () => {
+      const keys: RoleKey[] = AUTHZ_ROLES.map((r) => r.key);
+      expect(keys.length).toBe(AUTHZ_ROLES.length);
+    });
   });
 
-  test("includes workspace_member role", () => {
-    const member = AUTHZ_ROLES.find((r) => r.key === "workspace_member");
-    expect(member).toBeTruthy();
-  });
+  describe("AUTHZ-RBAC-2 Permissions", () => {
+    const cmsDocsPermissionKeys = [
+      "docs.document.create",
+      "docs.document.read",
+      "docs.document.update",
+      "docs.document.listByWorkspace",
+      "cms.content_type.manage",
+      "cms.content_entry.create",
+      "cms.content_entry.update",
+      "cms.content_entry.publish",
+      "cms.content_entry.listPublished",
+      "cms.content_entry.getPublishedBySlug",
+      "cms.comments.moderate",
+    ] as const;
 
-  test("read_only only gets list/introspect permissions", () => {
-    const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
-    expect(readOnly).toBeTruthy();
+    test("includes all AUTHZ-RBAC-2 permissions", () => {
+      const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
+      for (const key of cmsDocsPermissionKeys) {
+        expect(keys.has(key)).toBe(true);
+      }
+    });
 
-    expect(
-      readOnly?.permissions.includes("docs.document.listByWorkspace")
-    ).toBe(true);
-    expect(readOnly?.permissions.includes("cms.content.listPublished")).toBe(
-      true
-    );
-    expect(
-      readOnly?.permissions.includes("cms.content.getPublishedBySlug")
-    ).toBe(true);
-    expect(readOnly?.permissions.includes("cms.templates.listGlobal")).toBe(
-      true
-    );
-    expect(
-      readOnly?.permissions.includes("cms.content_types.listForWorkspace")
-    ).toBe(true);
-    expect(
-      readOnly?.permissions.includes("accounts.workspaces.listForUser")
-    ).toBe(true);
+    test("workspace_owner has all AUTHZ-RBAC-2 permissions", () => {
+      const owner = AUTHZ_ROLES.find((r) => r.key === "workspace_owner");
+      expect(owner).toBeTruthy();
+      for (const key of cmsDocsPermissionKeys) {
+        expect(owner?.permissions.includes(key)).toBe(true);
+      }
+    });
 
-    expect(readOnly?.permissions.includes("cms.blog_entry.listAdmin")).toBe(
-      false
-    );
-    expect(readOnly?.permissions.includes("docs.document.update")).toBe(false);
-    expect(readOnly?.permissions.includes("cms.blog_entry.updateMeta")).toBe(
-      false
-    );
-    expect(readOnly?.permissions.includes("cms.content.create")).toBe(false);
-    expect(readOnly?.permissions.includes("accounts.workspaces.create")).toBe(
-      false
-    );
+    test("content_editor has all AUTHZ-RBAC-2 permissions", () => {
+      const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
+      expect(editor).toBeTruthy();
+      for (const key of cmsDocsPermissionKeys) {
+        expect(editor?.permissions.includes(key)).toBe(true);
+      }
+    });
+
+    test("read_only does NOT have admin AUTHZ-RBAC-2 permissions", () => {
+      const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
+      expect(readOnly).toBeTruthy();
+
+      // Should NOT have these permissions
+      expect(readOnly?.permissions.includes("cms.content_type.manage")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.content_entry.create")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.content_entry.update")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.content_entry.publish")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.comments.moderate")).toBe(false);
+      expect(readOnly?.permissions.includes("docs.document.create")).toBe(false);
+      expect(readOnly?.permissions.includes("docs.document.update")).toBe(false);
+
+      // Should have these read-only permissions
+      expect(readOnly?.permissions.includes("docs.document.read")).toBe(true);
+      expect(readOnly?.permissions.includes("cms.content_entry.listPublished")).toBe(true);
+      expect(readOnly?.permissions.includes("cms.content_entry.getPublishedBySlug")).toBe(true);
+    });
   });
 });
