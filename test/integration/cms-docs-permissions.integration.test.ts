@@ -22,8 +22,7 @@ import {
 import { seedAuthz, AUTHZ_PERMISSIONS } from "../../src/db/seed/authz.seed";
 
 // Skip if integration tests are not enabled
-const SKIP_INTEGRATION =
-  process.env.RUN_INTEGRATION_TESTS !== "true";
+const SKIP_INTEGRATION = process.env.RUN_INTEGRATION_TESTS !== "true";
 
 describe.skipIf(SKIP_INTEGRATION)(
   "AUTHZ-RBAC-2: CMS & Docs Permissions (Integration)",
@@ -72,17 +71,17 @@ describe.skipIf(SKIP_INTEGRATION)(
         .select({ key: roles.key })
         .from(roles)
         .where(
-          inArray(roles.key, [
-            "workspace_owner",
-            "content_editor",
-            "read_only",
-          ])
+          inArray(roles.key, ["workspace_owner", "content_editor", "read_only"])
         );
 
       const roleKeys = new Set(roleRows.map((r) => r.key));
 
-      const ownerRoleKey = roleKeys.has("workspace_owner") ? "workspace_owner" : null;
-      const editorRoleKey = roleKeys.has("content_editor") ? "content_editor" : null;
+      const ownerRoleKey = roleKeys.has("workspace_owner")
+        ? "workspace_owner"
+        : null;
+      const editorRoleKey = roleKeys.has("content_editor")
+        ? "content_editor"
+        : null;
       const readOnlyRoleKey = roleKeys.has("read_only") ? "read_only" : null;
 
       if (!ownerRoleKey || !editorRoleKey || !readOnlyRoleKey) {

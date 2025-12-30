@@ -222,9 +222,7 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
 
     test("no duplicate permission keys", () => {
       const keys = AUTHZ_PERMISSIONS.map((p) => p.key);
-      const duplicates = keys.filter(
-        (key, idx) => keys.indexOf(key) !== idx
-      );
+      const duplicates = keys.filter((key, idx) => keys.indexOf(key) !== idx);
       expect(duplicates).toEqual([]);
     });
 

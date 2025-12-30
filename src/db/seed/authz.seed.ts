@@ -8,7 +8,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../schema";
-import { AUTHZ_PERMISSIONS, AUTHZ_ROLES, type PermissionKey } from "./permissions.config";
+import {
+  AUTHZ_PERMISSIONS,
+  AUTHZ_ROLES,
+  type PermissionKey,
+} from "./permissions.config";
 
 // Type for the database with schema
 export type AuthzDb = PostgresJsDatabase<typeof schema>;
@@ -27,7 +31,9 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
   // 1. Upsert all permissions
   await db
     .insert(schema.permissions)
-    .values(AUTHZ_PERMISSIONS.map((p) => ({ key: p.key, description: p.description })))
+    .values(
+      AUTHZ_PERMISSIONS.map((p) => ({ key: p.key, description: p.description }))
+    )
     .onConflictDoUpdate({
       target: schema.permissions.key,
       set: { description: sql`excluded.description` },
