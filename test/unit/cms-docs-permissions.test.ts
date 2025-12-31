@@ -216,7 +216,7 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
   describe("Permission key security", () => {
     test("all permission keys follow service.resource.action format", () => {
       // Pattern: service.resource.action (service/resource may contain underscores)
-      // Examples: docs.document.create, cms.blog_entry.read, telemetry.view
+      // Examples: docs.document.create, cms.blog_entry.read, telemetry.events.view
       const keyPattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+$/;
       for (const perm of AUTHZ_PERMISSIONS) {
         expect(keyPattern.test(perm.key)).toBe(true);

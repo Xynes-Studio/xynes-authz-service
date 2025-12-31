@@ -27,7 +27,7 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
 
     test("permission keys follow naming convention", () => {
       // Format: service.resource.action (resource may contain underscores)
-      // Examples: docs.document.create, cms.blog_entry.read, telemetry.view
+      // Examples: docs.document.create, cms.blog_entry.read, telemetry.events.view
       const pattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+$/;
       for (const perm of AUTHZ_PERMISSIONS) {
         expect(pattern.test(perm.key)).toBe(true);
