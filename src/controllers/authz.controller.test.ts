@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import app from "../index";
-
-// SEC-INTERNAL-AUTH-2: Tests require internal service token
-const INTERNAL_SERVICE_TOKEN =
-  process.env.INTERNAL_SERVICE_TOKEN ?? "test-internal-token";
+import { INTERNAL_SERVICE_TOKEN } from "../test/support/internal-auth";
 
 describe("POST /authz/check (Controller)", () => {
   const authHeaders = new Headers({
