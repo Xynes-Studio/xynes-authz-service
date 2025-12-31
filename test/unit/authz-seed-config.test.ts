@@ -26,8 +26,9 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
     });
 
     test("permission keys follow naming convention", () => {
-      // Format: service.resource.action
-      const pattern = /^[a-z_]+\.[a-z_]+\.[a-z]+[a-zA-Z]*$/;
+      // Format: service.resource.action (resource may contain underscores)
+      // Examples: docs.document.create, cms.blog_entry.read, telemetry.view
+      const pattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+$/;
       for (const perm of AUTHZ_PERMISSIONS) {
         expect(pattern.test(perm.key)).toBe(true);
       }
@@ -86,13 +87,13 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
     test("workspace_owner has all permissions", () => {
       const owner = AUTHZ_ROLES.find((r) => r.key === "workspace_owner");
       expect(owner).toBeDefined();
-      expect(owner!.permissions.length).toBe(AUTHZ_PERMISSIONS.length);
+      expect(owner?.permissions.length).toBe(AUTHZ_PERMISSIONS.length);
     });
 
     test("super_admin has all permissions", () => {
       const superAdmin = AUTHZ_ROLES.find((r) => r.key === "super_admin");
       expect(superAdmin).toBeDefined();
-      expect(superAdmin!.permissions.length).toBe(AUTHZ_PERMISSIONS.length);
+      expect(superAdmin?.permissions.length).toBe(AUTHZ_PERMISSIONS.length);
     });
 
     test("read_only has fewer permissions than content_editor", () => {
@@ -100,7 +101,7 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
       expect(readOnly).toBeDefined();
       expect(editor).toBeDefined();
-      expect(readOnly!.permissions.length).toBeLessThan(editor!.permissions.length);
+      expect(readOnly?.permissions.length).toBeLessThan(editor?.permissions.length);
     });
   });
 

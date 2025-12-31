@@ -17,9 +17,8 @@ import {
   userRoles,
   roles,
   permissions,
-  rolePermissions,
 } from "../../src/db/schema";
-import { seedAuthz, AUTHZ_PERMISSIONS } from "../../src/db/seed/authz.seed";
+import { seedAuthz } from "../../src/db/seed/authz.seed";
 
 // Skip if integration tests are not enabled
 const SKIP_INTEGRATION = process.env.RUN_INTEGRATION_TESTS !== "true";
