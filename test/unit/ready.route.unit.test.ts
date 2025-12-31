@@ -1,0 +1,36 @@
+import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { Hono } from "hono";
+import { createReadyRoute } from "../../src/routes/ready.route";
+
+describe("Ready Endpoint (Unit)", () => {
+    type NotReadyResponse = { status: "not_ready"; error: string };
+    const checkMock = mock();
+
+    beforeEach(() => {
+        checkMock.mockReset();
+    });
+
+    test("GET /ready returns 200 when DB is reachable", async () => {
+        checkMock.mockResolvedValueOnce(undefined);
+        const app = new Hono();
+        app.route("/", createReadyRoute({ getDatabaseUrl: () => "postgres://unused", check: checkMock }));
+
+        const res = await app.request("/ready");
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body).toEqual({ status: "ready" });
+        expect(checkMock).toHaveBeenCalledTimes(1);
+    });
+
+    test("GET /ready returns 503 when DB is unreachable", async () => {
+        checkMock.mockRejectedValueOnce(new Error("db down"));
+        const app = new Hono();
+        app.route("/", createReadyRoute({ getDatabaseUrl: () => "postgres://unused", check: checkMock }));
+
+        const res = await app.request("/ready");
+        expect(res.status).toBe(503);
+        const body = (await res.json()) as NotReadyResponse;
+        expect(body.status).toBe("not_ready");
+        expect(body.error).toContain("db down");
+    });
+});

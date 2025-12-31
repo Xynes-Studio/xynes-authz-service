@@ -10,11 +10,14 @@ Built with **Bun**, **Hono**, **Drizzle ORM**, and **PostgreSQL** (Supabase).
     - `src/services`: Business logic and Database interactions.
     - `src/routes`: Route definitions.
     - `src/db`: Database schema and connection.
+    - `src/db/seed`: Idempotent seed logic (upsert by key).
 - **Testing**:
     - **TDD**: Tests written before/concurrently with code.
-    - **Coverage**: Aiming for >75% coverage.
-    - **Tools**: `bun test` for unit/integration.
+    - **Coverage**: Minimum **80%** via `bun test --coverage` (see `bun run test:coverage`).
+    - **Segregation**: `test/unit/**`, `test/integration/**`, `test/feature/**`.
 - **Linting**: Standard Bun/TS configuration.
+
+Testing ADR reference: `xynes-cms-core/docs/adr/001-testing-strategy.md`.
 
 ## Setup
 1. `bun install`
@@ -23,12 +26,24 @@ Built with **Bun**, **Hono**, **Drizzle ORM**, and **PostgreSQL** (Supabase).
 4. `bun run seed`
 
 ## Running
-- Dev: `bun dev`
-- Test: `bun test`
-- Coverage: `bun test --coverage`
-- Lint: `bunx tsc --noEmit`
+- Dev: `bun run dev` (defaults to `.env.dev`; override with `XYNES_ENV_FILE=.env.localhost`)
+- Test: `bun run test`
+- Coverage: `bun run test:coverage`
+- Lint: `bun run lint`
 
 ## API
+### GET /health
+Liveness check. Returns:
+```json
+{ "status": "ok", "service": "xynes-authz-service" }
+```
+
+### GET /ready
+Readiness check. Runs a fast Postgres check and returns:
+```json
+{ "status": "ready" }
+```
+
 ### POST /authz/check
 Checks if a user has permission to perform an action in a workspace.
 **Body**:
@@ -39,7 +54,56 @@ Checks if a user has permission to perform an action in a workspace.
   "actionKey": "docs.document.create"
 }
 ```
-**Response**:
+Notes:
+- Request body is strictly validated (rejects missing/extra fields).
+- Oversized bodies are rejected (service-level max body size).
+
+### Response Success (200)
 ```json
-{ "allowed": true }
+{
+  "ok": true,
+  "data": { "allowed": true },
+  "meta": { "requestId": "req-..." }
+}
 ```
+
+### Response Error (400)
+Malformed/missing/invalid fields or oversized body:
+```json
+{
+  "ok": false,
+  "error": { "code": "VALIDATION_ERROR", "message": "Invalid request body" },
+  "meta": { "requestId": "req-..." }
+}
+```
+
+### Response Error (500)
+If the service cannot check permissions (e.g. database down), it returns:
+```json
+{
+  "ok": false,
+  "error": { "code": "INTERNAL_ERROR", "message": "An internal error occurred while checking permissions." },
+  "meta": { "requestId": "req-..." }
+}
+```
+
+## Roles & Permissions
+The service is seeded with the following roles:
+- **workspace_owner**: Full access to all features.
+- **content_editor**: Access to create/edit/read Documents and CMS entries (Blog, Comments).
+- **read_only**: Read-only access to Documents and CMS entries.
+- **super_admin**: System-wide full access.
+
+New permissions added (AUTHZ-COVERAGE-1 + AUTHZ-CONTENT-2):
+- `docs.document.update`
+- `docs.document.listByWorkspace`
+- `cms.blog_entry.listAdmin`
+- `cms.blog_entry.updateMeta`
+- `cms.templates.listGlobal`
+- `cms.content_types.listForWorkspace`
+- `cms.content.create`
+- `cms.content.listPublished`
+- `cms.content.getPublishedBySlug`
+
+Dev docs:
+- `docs/DEV.md`

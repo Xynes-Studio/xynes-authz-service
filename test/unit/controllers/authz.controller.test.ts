@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import app from "../index";
-import { INTERNAL_SERVICE_TOKEN } from "../test/support/internal-auth";
+import app from "../../../src/index";
+import { INTERNAL_SERVICE_TOKEN } from "../../support/internal-auth";
 
 describe("POST /authz/check (Controller)", () => {
   const authHeaders = new Headers({
