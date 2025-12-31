@@ -177,14 +177,14 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
   });
 
   describe("TELE-VIEW-1 Permissions", () => {
-    test("telemetry.view permission exists", () => {
+    test("telemetry.events.view permission exists", () => {
       const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
-      expect(keys.has("telemetry.view")).toBe(true);
+      expect(keys.has("telemetry.events.view")).toBe(true);
     });
 
-    test("telemetry.view has correct description", () => {
+    test("telemetry.events.view has correct description", () => {
       const telemetryPerm = AUTHZ_PERMISSIONS.find(
-        (p) => p.key === "telemetry.view"
+        (p) => p.key === "telemetry.events.view"
       );
       expect(telemetryPerm).toBeDefined();
       expect(telemetryPerm?.description).toBe(
@@ -192,36 +192,36 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       );
     });
 
-    test("workspace_owner has telemetry.view", () => {
+    test("workspace_owner has telemetry.events.view", () => {
       const owner = AUTHZ_ROLES.find((r) => r.key === "workspace_owner");
       expect(owner).toBeTruthy();
-      expect(owner?.permissions.includes("telemetry.view")).toBe(true);
+      expect(owner?.permissions.includes("telemetry.events.view")).toBe(true);
     });
 
-    test("super_admin has telemetry.view", () => {
+    test("super_admin has telemetry.events.view", () => {
       const superAdmin = AUTHZ_ROLES.find((r) => r.key === "super_admin");
       expect(superAdmin).toBeTruthy();
-      expect(superAdmin?.permissions.includes("telemetry.view")).toBe(true);
+      expect(superAdmin?.permissions.includes("telemetry.events.view")).toBe(true);
     });
 
-    test("read_only does NOT have telemetry.view (admin-only feature)", () => {
+    test("read_only does NOT have telemetry.events.view (admin-only feature)", () => {
       const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
       expect(readOnly).toBeTruthy();
-      expect(readOnly?.permissions.includes("telemetry.view")).toBe(false);
+      expect(readOnly?.permissions.includes("telemetry.events.view")).toBe(false);
     });
 
-    test("content_editor does NOT have telemetry.view (admin-only feature)", () => {
-      // TELE-VIEW-1: telemetry.view is intentionally excluded from content_editor
+    test("content_editor does NOT have telemetry.events.view (admin-only feature)", () => {
+      // TELE-VIEW-1: telemetry.events.view is intentionally excluded from content_editor
       // Telemetry data is sensitive and should only be accessible to workspace owners/admins
       const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
       expect(editor).toBeTruthy();
-      expect(editor?.permissions.includes("telemetry.view")).toBe(false);
+      expect(editor?.permissions.includes("telemetry.events.view")).toBe(false);
     });
 
-    test("workspace_member does NOT have telemetry.view", () => {
+    test("workspace_member does NOT have telemetry.events.view", () => {
       const member = AUTHZ_ROLES.find((r) => r.key === "workspace_member");
       expect(member).toBeTruthy();
-      expect(member?.permissions.includes("telemetry.view")).toBe(false);
+      expect(member?.permissions.includes("telemetry.events.view")).toBe(false);
     });
   });
 });

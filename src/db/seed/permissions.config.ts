@@ -125,7 +125,7 @@ export const AUTHZ_PERMISSIONS = [
   // Telemetry (TELE-VIEW-1)
   // ───────────────────────────────────────────────────────────────────────────
   {
-    key: "telemetry.view",
+    key: "telemetry.events.view",
     description: "View telemetry events and stats for workspace",
   },
 ] as const;
