@@ -1,38 +1,48 @@
 import { describe, expect, test } from "bun:test";
 import app from "../index";
 
+// SEC-INTERNAL-AUTH-2: Tests require internal service token
+const INTERNAL_SERVICE_TOKEN =
+  process.env.INTERNAL_SERVICE_TOKEN ?? "test-internal-token";
+
 describe("POST /authz/check (Controller)", () => {
+  const authHeaders = new Headers({
+    "Content-Type": "application/json",
+    "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+  });
+
   test("should return 400 if body is invalid (empty)", async () => {
     const res = await app.request("/authz/check", {
       method: "POST",
       body: JSON.stringify({}),
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: authHeaders,
     });
     expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toBe("Missing required fields");
+    const body = (await res.json()) as { ok: boolean; error: { code: string } };
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
   test("should return 400 if userId is missing", async () => {
     const res = await app.request("/authz/check", {
       method: "POST",
       body: JSON.stringify({
-        workspaceId: "ws-123",
+        workspaceId: "00000000-0000-0000-0000-000000000001",
         actionKey: "docs.document.read",
       }),
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: authHeaders,
     });
     expect(res.status).toBe(400);
   });
 
-  test("should return 400 if workspaceId is missing", async () => {
+  test("should return 400 if workspaceId is missing (and not null)", async () => {
     const res = await app.request("/authz/check", {
       method: "POST",
       body: JSON.stringify({
-        userId: "user-123",
+        userId: "00000000-0000-0000-0000-000000000001",
         actionKey: "docs.document.read",
       }),
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: authHeaders,
     });
     expect(res.status).toBe(400);
   });
@@ -41,10 +51,10 @@ describe("POST /authz/check (Controller)", () => {
     const res = await app.request("/authz/check", {
       method: "POST",
       body: JSON.stringify({
-        userId: "user-123",
-        workspaceId: "ws-123",
+        userId: "00000000-0000-0000-0000-000000000001",
+        workspaceId: "00000000-0000-0000-0000-000000000002",
       }),
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: authHeaders,
     });
     expect(res.status).toBe(400);
   });
@@ -53,7 +63,7 @@ describe("POST /authz/check (Controller)", () => {
     const res = await app.request("/authz/check", {
       method: "POST",
       body: "not json",
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: authHeaders,
     });
     expect(res.status).toBe(400);
   });
