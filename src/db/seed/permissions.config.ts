@@ -120,6 +120,14 @@ export const AUTHZ_PERMISSIONS = [
     key: "cms.comments.moderate",
     description: "Moderate comments (approve, reject, delete)",
   },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Telemetry (TELE-VIEW-1)
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    key: "telemetry.events.view",
+    description: "View telemetry events and stats for workspace",
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

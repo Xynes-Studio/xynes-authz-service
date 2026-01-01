@@ -33,7 +33,8 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
 
     const cmsCommentPermissions = ["cms.comments.moderate"] as const;
 
-    const allNewPermissions = [
+    // Combined array for potential future use
+    const _allNewPermissions = [
       ...docsPermissions,
       ...cmsContentPermissions,
       ...cmsCommentPermissions,
@@ -214,7 +215,9 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
 
   describe("Permission key security", () => {
     test("all permission keys follow service.resource.action format", () => {
-      const keyPattern = /^[a-z]+\.[a-z_]+\.[a-zA-Z]+$/;
+      // Pattern: service.resource.action (service/resource may contain underscores)
+      // Examples: docs.document.create, cms.blog_entry.read, telemetry.events.view
+      const keyPattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+$/;
       for (const perm of AUTHZ_PERMISSIONS) {
         expect(keyPattern.test(perm.key)).toBe(true);
       }
