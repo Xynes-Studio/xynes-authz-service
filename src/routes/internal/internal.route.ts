@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireInternalServiceAuth } from "../../middleware/internal-service-auth";
 import { createErrorResponse, getOrCreateRequestId } from "../../lib/api-error";
 import { assignRole } from "../../services/role-assignment.service";
+import { ensureAuthzSeeded } from "../../infra/ensure-seeded";
 
 const internalRoute = new Hono();
 
@@ -84,15 +85,31 @@ internalRoute.post("/authz-actions", async (c) => {
     }
 
     try {
+      await ensureAuthzSeeded();
       await assignRole(roleParsed.data);
       return c.json(
         { ok: true, data: { assigned: true }, meta: { requestId } },
         200
       );
     } catch (e) {
+      const err = e as unknown as {
+        message?: string;
+        code?: string;
+        detail?: string;
+        constraint?: string;
+        schema?: string;
+        table?: string;
+        column?: string;
+      };
       console.error("Failed to assign role", {
         requestId,
-        message: (e as Error).message,
+        message: err?.message,
+        code: err?.code,
+        detail: err?.detail,
+        constraint: err?.constraint,
+        schema: err?.schema,
+        table: err?.table,
+        column: err?.column,
       });
       return c.json(
         createErrorResponse(

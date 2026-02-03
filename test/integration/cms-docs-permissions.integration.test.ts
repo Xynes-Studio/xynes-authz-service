@@ -12,7 +12,6 @@ import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import { eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import app from "../../src/index";
-import { db } from "../../src/db";
 import {
   userRoles,
   roles,
@@ -21,11 +20,14 @@ import {
 import { seedAuthz } from "../../src/db/seed/authz.seed";
 
 // Skip if integration tests are not enabled
-const SKIP_INTEGRATION = process.env.RUN_INTEGRATION_TESTS !== "true";
+const SKIP_INTEGRATION =
+  process.env.RUN_INTEGRATION_TESTS !== "true" || !process.env.DATABASE_URL;
 
 describe.skipIf(SKIP_INTEGRATION)(
   "AUTHZ-RBAC-2: CMS & Docs Permissions (Integration)",
   () => {
+    let db: Awaited<ReturnType<typeof import("../../src/db")>>["db"];
+
     // Test identifiers - using UUIDs for isolation
     const TEST_WORKSPACE_ID = randomUUID();
     const OWNER_USER_ID = randomUUID();
@@ -62,6 +64,8 @@ describe.skipIf(SKIP_INTEGRATION)(
     // ─────────────────────────────────────────────────────────────────────────
 
     beforeAll(async () => {
+      ({ db } = await import("../../src/db"));
+
       // Seed the database (idempotent)
       await seedAuthz({ db });
 
