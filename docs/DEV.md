@@ -128,6 +128,11 @@ Internal role assignment is also service-to-service:
   - Request envelope: `{ actionKey: "authz.assignRole", payload: { userId, workspaceId, roleKey } }`
   - `roleKey` is restricted to: `workspace_owner` | `workspace_member`
 
+- `POST /internal/authz-actions`
+  - Requires `X-Internal-Service-Token`
+  - Request envelope: `{ actionKey: "authz.listRolesForWorkspace", payload: { workspaceId, userIds?: string[] } }`
+  - Returns role assignments for the workspace (optionally filtered by `userIds`)
+
 ## `/authz/check` Validation & Limits (SEC-AUTHZ-1)
 - Strict JSON schema validation (rejects missing/extra fields) using `zod`:
   - `userId`: UUID string
@@ -166,6 +171,7 @@ Examples:
 - `accounts.workspaces.create` – Create workspaces
 - `accounts.workspaces.listForUser` – List workspaces for user
 - `accounts.invites.create` – Create workspace invites
+- `accounts.workspace_members.listForWorkspace` – List workspace members
 
 **Docs Service:**
 - `docs.document.create` – Create documents
