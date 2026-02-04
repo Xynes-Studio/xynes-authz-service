@@ -21,6 +21,10 @@ export const AUTHZ_PERMISSIONS = [
     key: "accounts.workspaces.listForUser",
     description: "List workspaces for user",
   },
+  {
+    key: "accounts.workspace_members.listForWorkspace",
+    description: "List workspace members",
+  },
 
   // ───────────────────────────────────────────────────────────────────────────
   // Workspace Invites
@@ -156,7 +160,9 @@ export const AUTHZ_ROLES = [
   {
     key: "workspace_member",
     description: "Workspace Member",
-    permissions: [] as PermissionKey[],
+    permissions: [
+      "accounts.workspace_members.listForWorkspace",
+    ] as PermissionKey[],
   },
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -207,6 +213,7 @@ export const AUTHZ_ROLES = [
       // Workspaces (global)
       "accounts.workspaces.create",
       "accounts.workspaces.listForUser",
+      "accounts.workspace_members.listForWorkspace",
     ] as PermissionKey[],
   },
 
@@ -239,6 +246,7 @@ export const AUTHZ_ROLES = [
 
       // Workspaces (global)
       "accounts.workspaces.listForUser",
+      "accounts.workspace_members.listForWorkspace",
     ] as PermissionKey[],
   },
 

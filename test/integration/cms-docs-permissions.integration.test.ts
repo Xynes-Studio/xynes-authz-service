@@ -12,12 +12,9 @@ import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import { eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import app from "../../src/index";
-import {
-  userRoles,
-  roles,
-  permissions,
-} from "../../src/db/schema";
+import { userRoles, roles, permissions } from "../../src/db/schema";
 import { seedAuthz } from "../../src/db/seed/authz.seed";
+import { INTERNAL_SERVICE_TOKEN } from "../support/internal-auth";
 
 // Skip if integration tests are not enabled
 const SKIP_INTEGRATION =
@@ -74,7 +71,11 @@ describe.skipIf(SKIP_INTEGRATION)(
         .select({ key: roles.key })
         .from(roles)
         .where(
-          inArray(roles.key, ["workspace_owner", "content_editor", "read_only"])
+          inArray(roles.key, [
+            "workspace_owner",
+            "content_editor",
+            "read_only",
+          ]),
         );
 
       const roleKeys = new Set(roleRows.map((r) => r.key));
@@ -125,22 +126,25 @@ describe.skipIf(SKIP_INTEGRATION)(
     // HELPER FUNCTIONS
     // ─────────────────────────────────────────────────────────────────────────
 
-    type CheckResponse = { allowed: boolean };
+    type CheckResponse = { ok: boolean; data?: { allowed: boolean } };
 
     async function checkPermission(
       userId: string,
       workspaceId: string,
-      actionKey: string
+      actionKey: string,
     ): Promise<boolean> {
       const res = await app.request("/authz/check", {
         method: "POST",
         body: JSON.stringify({ userId, workspaceId, actionKey }),
-        headers: new Headers({ "Content-Type": "application/json" }),
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        }),
       });
 
       expect(res.status).toBe(200);
       const body = (await res.json()) as CheckResponse;
-      return body.allowed;
+      return body.ok ? body.data?.allowed : false;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -178,7 +182,7 @@ describe.skipIf(SKIP_INTEGRATION)(
               "content_editor",
               "read_only",
               "super_admin",
-            ])
+            ]),
           );
 
         const foundKeys = new Set(roleRows.map((r) => r.key));
@@ -199,7 +203,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             OWNER_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -210,7 +214,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             OWNER_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -220,7 +224,7 @@ describe.skipIf(SKIP_INTEGRATION)(
         const allowed = await checkPermission(
           OWNER_USER_ID,
           TEST_WORKSPACE_ID,
-          "cms.comments.moderate"
+          "cms.comments.moderate",
         );
         expect(allowed).toBe(true);
       });
@@ -233,7 +237,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             OWNER_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -250,7 +254,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             EDITOR_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -261,7 +265,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             EDITOR_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -271,7 +275,7 @@ describe.skipIf(SKIP_INTEGRATION)(
         const allowed = await checkPermission(
           EDITOR_USER_ID,
           TEST_WORKSPACE_ID,
-          "cms.comments.moderate"
+          "cms.comments.moderate",
         );
         expect(allowed).toBe(true);
       });
@@ -284,7 +288,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             EDITOR_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -301,7 +305,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             READONLY_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(true);
         }
@@ -311,7 +315,7 @@ describe.skipIf(SKIP_INTEGRATION)(
         const allowed = await checkPermission(
           READONLY_USER_ID,
           TEST_WORKSPACE_ID,
-          "docs.document.read"
+          "docs.document.read",
         );
         expect(allowed).toBe(true);
       });
@@ -321,7 +325,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             READONLY_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(false);
         }
@@ -331,7 +335,7 @@ describe.skipIf(SKIP_INTEGRATION)(
         const allowed = await checkPermission(
           READONLY_USER_ID,
           TEST_WORKSPACE_ID,
-          "cms.comments.moderate"
+          "cms.comments.moderate",
         );
         expect(allowed).toBe(false);
       });
@@ -341,7 +345,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             READONLY_USER_ID,
             TEST_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(false);
         }
@@ -363,7 +367,7 @@ describe.skipIf(SKIP_INTEGRATION)(
           const allowed = await checkPermission(
             OWNER_USER_ID,
             OTHER_WORKSPACE_ID,
-            actionKey
+            actionKey,
           );
           expect(allowed).toBe(false);
         }
@@ -379,7 +383,7 @@ describe.skipIf(SKIP_INTEGRATION)(
         const allowed = await checkPermission(
           randomUUID(),
           TEST_WORKSPACE_ID,
-          "cms.content_entry.create"
+          "cms.content_entry.create",
         );
         expect(allowed).toBe(false);
       });
@@ -388,10 +392,10 @@ describe.skipIf(SKIP_INTEGRATION)(
         const allowed = await checkPermission(
           OWNER_USER_ID,
           TEST_WORKSPACE_ID,
-          "unknown.action.key"
+          "unknown.action.key",
         );
         expect(allowed).toBe(false);
       });
     });
-  }
+  },
 );

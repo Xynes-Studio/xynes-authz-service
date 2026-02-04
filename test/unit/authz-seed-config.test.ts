@@ -45,6 +45,13 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       const keys = AUTHZ_PERMISSIONS.map((p) => p.key);
       expect(new Set(keys).size).toBe(keys.length);
     });
+
+    test("includes workspace members list permission", () => {
+      const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
+      expect(keys.has("accounts.workspace_members.listForWorkspace")).toBe(
+        true,
+      );
+    });
   });
 
   describe("Role Configuration", () => {
@@ -101,7 +108,9 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
       expect(readOnly).toBeDefined();
       expect(editor).toBeDefined();
-      expect(readOnly?.permissions.length).toBeLessThan(editor?.permissions.length);
+      expect(readOnly?.permissions.length).toBeLessThan(
+        editor?.permissions.length,
+      );
     });
   });
 
@@ -161,18 +170,36 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(readOnly).toBeTruthy();
 
       // Should NOT have these permissions
-      expect(readOnly?.permissions.includes("cms.content_type.manage")).toBe(false);
-      expect(readOnly?.permissions.includes("cms.content_entry.create")).toBe(false);
-      expect(readOnly?.permissions.includes("cms.content_entry.update")).toBe(false);
-      expect(readOnly?.permissions.includes("cms.content_entry.publish")).toBe(false);
-      expect(readOnly?.permissions.includes("cms.comments.moderate")).toBe(false);
-      expect(readOnly?.permissions.includes("docs.document.create")).toBe(false);
-      expect(readOnly?.permissions.includes("docs.document.update")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.content_type.manage")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("cms.content_entry.create")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("cms.content_entry.update")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("cms.content_entry.publish")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("cms.comments.moderate")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("docs.document.create")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("docs.document.update")).toBe(
+        false,
+      );
 
       // Should have these read-only permissions
       expect(readOnly?.permissions.includes("docs.document.read")).toBe(true);
-      expect(readOnly?.permissions.includes("cms.content_entry.listPublished")).toBe(true);
-      expect(readOnly?.permissions.includes("cms.content_entry.getPublishedBySlug")).toBe(true);
+      expect(
+        readOnly?.permissions.includes("cms.content_entry.listPublished"),
+      ).toBe(true);
+      expect(
+        readOnly?.permissions.includes("cms.content_entry.getPublishedBySlug"),
+      ).toBe(true);
     });
   });
 
@@ -184,11 +211,11 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
 
     test("telemetry.events.view has correct description", () => {
       const telemetryPerm = AUTHZ_PERMISSIONS.find(
-        (p) => p.key === "telemetry.events.view"
+        (p) => p.key === "telemetry.events.view",
       );
       expect(telemetryPerm).toBeDefined();
       expect(telemetryPerm?.description).toBe(
-        "View telemetry events and stats for workspace"
+        "View telemetry events and stats for workspace",
       );
     });
 
@@ -201,13 +228,17 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
     test("super_admin has telemetry.events.view", () => {
       const superAdmin = AUTHZ_ROLES.find((r) => r.key === "super_admin");
       expect(superAdmin).toBeTruthy();
-      expect(superAdmin?.permissions.includes("telemetry.events.view")).toBe(true);
+      expect(superAdmin?.permissions.includes("telemetry.events.view")).toBe(
+        true,
+      );
     });
 
     test("read_only does NOT have telemetry.events.view (admin-only feature)", () => {
       const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
       expect(readOnly).toBeTruthy();
-      expect(readOnly?.permissions.includes("telemetry.events.view")).toBe(false);
+      expect(readOnly?.permissions.includes("telemetry.events.view")).toBe(
+        false,
+      );
     });
 
     test("content_editor does NOT have telemetry.events.view (admin-only feature)", () => {
