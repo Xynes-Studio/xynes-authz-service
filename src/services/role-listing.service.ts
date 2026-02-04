@@ -21,6 +21,10 @@ export async function listRolesForWorkspace(
 ): Promise<WorkspaceRoleAssignment[]> {
   const db = deps.db ?? (await import("../db")).db;
 
+  if (input.userIds && input.userIds.length === 0) {
+    return [];
+  }
+
   const conditions = [eq(userRoles.workspaceId, input.workspaceId)];
   if (input.userIds && input.userIds.length > 0) {
     conditions.push(inArray(userRoles.userId, input.userIds));
