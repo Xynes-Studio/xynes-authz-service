@@ -73,6 +73,18 @@ Seed the database (safe to run multiple times):
 bun run seed
 ```
 
+### Telemetry Permission Compatibility (Gateway DB Routes)
+
+When gateway routes are sourced from `platform.routes`, the authz seed must include telemetry action permissions used by those routes:
+
+- `telemetry.events.view`
+- `telemetry.events.listRecentForWorkspace`
+- `telemetry.stats.summaryByRoute`
+
+Role policy (least privilege):
+- Allowed: `workspace_owner`, `super_admin`
+- Denied: `workspace_member`, `content_editor`, `read_only`
+
 ## Testing Strategy (TDD + Coverage)
 
 We follow **Test-Driven Development** with a test pyramid:

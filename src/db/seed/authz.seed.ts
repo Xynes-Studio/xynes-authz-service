@@ -106,6 +106,9 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         "cms.comments.moderate",
         "docs.document.create",
         "docs.document.update",
+        "telemetry.events.view",
+        "telemetry.events.listRecentForWorkspace",
+        "telemetry.stats.summaryByRoute",
       ];
 
       for (const adminPerm of adminPermissions) {
