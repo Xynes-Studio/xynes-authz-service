@@ -77,6 +77,7 @@ bun run seed
 
 When gateway routes are sourced from `platform.routes`, the authz seed must include telemetry action permissions used by those routes:
 
+- `telemetry.events.view`
 - `telemetry.events.listRecentForWorkspace`
 - `telemetry.stats.summaryByRoute`
 
