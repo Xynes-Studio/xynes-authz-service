@@ -132,6 +132,14 @@ export const AUTHZ_PERMISSIONS = [
     key: "telemetry.events.view",
     description: "View telemetry events and stats for workspace",
   },
+  {
+    key: "telemetry.events.listRecentForWorkspace",
+    description: "List recent telemetry events for workspace",
+  },
+  {
+    key: "telemetry.stats.summaryByRoute",
+    description: "Read telemetry route summary statistics for workspace",
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
