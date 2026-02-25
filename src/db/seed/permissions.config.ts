@@ -122,6 +122,14 @@ export const AUTHZ_PERMISSIONS = [
     key: "cms.content_directories.create",
     description: "Create content directories",
   },
+  {
+    key: "cms.content_directories.update",
+    description: "Update content directories",
+  },
+  {
+    key: "cms.content_directories.delete",
+    description: "Delete content directories",
+  },
 
   // ───────────────────────────────────────────────────────────────────────────
   // CMS Comments (AUTHZ-RBAC-2)
@@ -221,7 +229,6 @@ export const AUTHZ_ROLES = [
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
       "cms.content_directories.listForWorkspace",
-      "cms.content_directories.create",
 
       // CMS Comments (AUTHZ-RBAC-2: moderate included)
       "cms.comments.create",

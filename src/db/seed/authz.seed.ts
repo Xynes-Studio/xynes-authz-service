@@ -94,6 +94,26 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         .onConflictDoNothing();
     }
 
+    const removePermissionsFromRole = async (
+      roleId: string,
+      permissionKeysToRemove: string[],
+    ) => {
+      for (const permissionKey of permissionKeysToRemove) {
+        const permissionId = permissionIdByKey.get(permissionKey);
+        if (!permissionId) {
+          continue;
+        }
+        await db
+          .delete(schema.rolePermissions)
+          .where(
+            and(
+              eq(schema.rolePermissions.roleId, roleId),
+              eq(schema.rolePermissions.permissionId, permissionId)
+            )
+          );
+      }
+    };
+
     // Special handling: ensure read_only doesn't have admin permissions
     // (defensive cleanup in case of manual additions)
     if (roleConfig.key === "read_only") {
@@ -104,6 +124,8 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         "cms.content_entry.update",
         "cms.content_entry.publish",
         "cms.content_directories.create",
+        "cms.content_directories.update",
+        "cms.content_directories.delete",
         "cms.comments.moderate",
         "docs.document.create",
         "docs.document.update",
@@ -111,20 +133,18 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         "telemetry.events.listRecentForWorkspace",
         "telemetry.stats.summaryByRoute",
       ];
+      await removePermissionsFromRole(resolvedRoleId, adminPermissions);
+    }
 
-      for (const adminPerm of adminPermissions) {
-        const adminPermissionId = permissionIdByKey.get(adminPerm);
-        if (adminPermissionId) {
-          await db
-            .delete(schema.rolePermissions)
-            .where(
-              and(
-                eq(schema.rolePermissions.roleId, resolvedRoleId),
-                eq(schema.rolePermissions.permissionId, adminPermissionId)
-              )
-            );
-        }
-      }
+    // Owner-only guardrail: content_editor must not retain directory write permissions.
+    // This makes reseeding corrective for environments where these permissions
+    // were previously granted.
+    if (roleConfig.key === "content_editor") {
+      await removePermissionsFromRole(resolvedRoleId, [
+        "cms.content_directories.create",
+        "cms.content_directories.update",
+        "cms.content_directories.delete",
+      ]);
     }
   }
 }
