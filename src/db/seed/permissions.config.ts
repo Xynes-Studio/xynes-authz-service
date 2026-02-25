@@ -114,6 +114,14 @@ export const AUTHZ_PERMISSIONS = [
     key: "cms.content_types.listForWorkspace",
     description: "List content types for workspace",
   },
+  {
+    key: "cms.content_directories.listForWorkspace",
+    description: "List content directories for workspace",
+  },
+  {
+    key: "cms.content_directories.create",
+    description: "Create content directories",
+  },
 
   // ───────────────────────────────────────────────────────────────────────────
   // CMS Comments (AUTHZ-RBAC-2)
@@ -212,6 +220,8 @@ export const AUTHZ_ROLES = [
       // CMS Templates / Content Types (Legacy)
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
+      "cms.content_directories.listForWorkspace",
+      "cms.content_directories.create",
 
       // CMS Comments (AUTHZ-RBAC-2: moderate included)
       "cms.comments.create",
@@ -251,6 +261,7 @@ export const AUTHZ_ROLES = [
       "cms.content.getPublishedBySlug",
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
+      "cms.content_directories.listForWorkspace",
 
       // Workspaces (global)
       "accounts.workspaces.listForUser",
