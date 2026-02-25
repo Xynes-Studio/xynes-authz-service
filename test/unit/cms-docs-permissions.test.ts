@@ -35,6 +35,8 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
     const cmsDirectoryPermissions = [
       "cms.content_directories.listForWorkspace",
       "cms.content_directories.create",
+      "cms.content_directories.update",
+      "cms.content_directories.delete",
     ] as const;
 
     // Combined array for potential future use
@@ -107,6 +109,8 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       // CMS content directories
       "cms.content_directories.listForWorkspace",
       "cms.content_directories.create",
+      "cms.content_directories.update",
+      "cms.content_directories.delete",
     ] as const;
 
     test("role exists", () => {
@@ -144,7 +148,11 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.comments.moderate",
       // CMS content directories
       "cms.content_directories.listForWorkspace",
+    ] as const;
+    const editorDeniedPermissions = [
       "cms.content_directories.create",
+      "cms.content_directories.update",
+      "cms.content_directories.delete",
     ] as const;
 
     test("role exists", () => {
@@ -157,6 +165,14 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       expect(editor).toBeTruthy();
       for (const key of editorPermissions) {
         expect(editor?.permissions.includes(key)).toBe(true);
+      }
+    });
+
+    test("does NOT have owner-only content directory write permissions", () => {
+      const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
+      expect(editor).toBeTruthy();
+      for (const key of editorDeniedPermissions) {
+        expect(editor?.permissions.includes(key)).toBe(false);
       }
     });
   });
@@ -186,6 +202,8 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.comments.moderate",
       // CMS content directory write
       "cms.content_directories.create",
+      "cms.content_directories.update",
+      "cms.content_directories.delete",
     ] as const;
 
     test("role exists", () => {

@@ -166,9 +166,10 @@ class FakeAuthzDb {
         const [roleId, ...rest] = params;
         if (!roleId) return;
 
-        const permissionId = rest[0];
-        if (permissionId) {
-          dbState.rolePermissions.delete(`${roleId}|${permissionId}`);
+        if (rest.length > 0) {
+          for (const permissionId of rest) {
+            dbState.rolePermissions.delete(`${roleId}|${permissionId}`);
+          }
           return;
         }
 
@@ -222,6 +223,20 @@ describe("seedAuthz (Unit, in-memory DB)", () => {
     expect(has("workspace_owner", "cms.content.getPublishedBySlug")).toBe(true);
     expect(has("content_editor", "cms.content.getPublishedBySlug")).toBe(true);
     expect(has("read_only", "cms.content.getPublishedBySlug")).toBe(true);
+
+    expect(has("workspace_owner", "cms.content_directories.create")).toBe(true);
+    expect(has("workspace_owner", "cms.content_directories.update")).toBe(true);
+    expect(has("workspace_owner", "cms.content_directories.delete")).toBe(true);
+
+    expect(has("content_editor", "cms.content_directories.listForWorkspace")).toBe(true);
+    expect(has("content_editor", "cms.content_directories.create")).toBe(false);
+    expect(has("content_editor", "cms.content_directories.update")).toBe(false);
+    expect(has("content_editor", "cms.content_directories.delete")).toBe(false);
+
+    expect(has("read_only", "cms.content_directories.listForWorkspace")).toBe(true);
+    expect(has("read_only", "cms.content_directories.create")).toBe(false);
+    expect(has("read_only", "cms.content_directories.update")).toBe(false);
+    expect(has("read_only", "cms.content_directories.delete")).toBe(false);
   });
 
   test("removes cms.blog_entry.listAdmin from read_only on reseed", async () => {
@@ -258,5 +273,64 @@ describe("seedAuthz (Unit, in-memory DB)", () => {
 
     await seedAuthz({ db: db as unknown as AuthzDb });
     expect(db.rolePermissions.has(`${readOnlyRoleId}|${createDirectoryPermId}`)).toBe(false);
+  });
+
+  test("removes cms.content_directories.update and delete from read_only on reseed", async () => {
+    const db = new FakeAuthzDb();
+    await seedAuthz({ db: db as unknown as AuthzDb });
+
+    const readOnlyRoleId = db.roles.get("read_only")?.id;
+    expect(readOnlyRoleId).toBeTruthy();
+
+    const updatePermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.content_directories.update",
+    )?.id;
+    const deletePermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.content_directories.delete",
+    )?.id;
+    expect(updatePermId).toBeTruthy();
+    expect(deletePermId).toBeTruthy();
+
+    db.rolePermissions.add(`${readOnlyRoleId}|${updatePermId}`);
+    db.rolePermissions.add(`${readOnlyRoleId}|${deletePermId}`);
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${updatePermId}`)).toBe(true);
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${deletePermId}`)).toBe(true);
+
+    await seedAuthz({ db: db as unknown as AuthzDb });
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${updatePermId}`)).toBe(false);
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${deletePermId}`)).toBe(false);
+  });
+
+  test("removes content directory write permissions from content_editor on reseed", async () => {
+    const db = new FakeAuthzDb();
+    await seedAuthz({ db: db as unknown as AuthzDb });
+
+    const contentEditorRoleId = db.roles.get("content_editor")?.id;
+    expect(contentEditorRoleId).toBeTruthy();
+
+    const createPermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.content_directories.create",
+    )?.id;
+    const updatePermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.content_directories.update",
+    )?.id;
+    const deletePermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.content_directories.delete",
+    )?.id;
+    expect(createPermId).toBeTruthy();
+    expect(updatePermId).toBeTruthy();
+    expect(deletePermId).toBeTruthy();
+
+    db.rolePermissions.add(`${contentEditorRoleId}|${createPermId}`);
+    db.rolePermissions.add(`${contentEditorRoleId}|${updatePermId}`);
+    db.rolePermissions.add(`${contentEditorRoleId}|${deletePermId}`);
+    expect(db.rolePermissions.has(`${contentEditorRoleId}|${createPermId}`)).toBe(true);
+    expect(db.rolePermissions.has(`${contentEditorRoleId}|${updatePermId}`)).toBe(true);
+    expect(db.rolePermissions.has(`${contentEditorRoleId}|${deletePermId}`)).toBe(true);
+
+    await seedAuthz({ db: db as unknown as AuthzDb });
+    expect(db.rolePermissions.has(`${contentEditorRoleId}|${createPermId}`)).toBe(false);
+    expect(db.rolePermissions.has(`${contentEditorRoleId}|${updatePermId}`)).toBe(false);
+    expect(db.rolePermissions.has(`${contentEditorRoleId}|${deletePermId}`)).toBe(false);
   });
 });
