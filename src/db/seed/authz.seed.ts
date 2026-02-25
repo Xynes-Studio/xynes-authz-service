@@ -96,22 +96,24 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
 
     const removePermissionsFromRole = async (
       roleId: string,
-      permissionKeysToRemove: string[],
+      permissionKeysToRemove: readonly PermissionKey[],
     ) => {
-      for (const permissionKey of permissionKeysToRemove) {
-        const permissionId = permissionIdByKey.get(permissionKey);
-        if (!permissionId) {
-          continue;
-        }
-        await db
-          .delete(schema.rolePermissions)
-          .where(
-            and(
-              eq(schema.rolePermissions.roleId, roleId),
-              eq(schema.rolePermissions.permissionId, permissionId)
-            )
-          );
+      const permissionIdsToRemove = permissionKeysToRemove
+        .map((permissionKey) => permissionIdByKey.get(permissionKey))
+        .filter((permissionId): permissionId is string => Boolean(permissionId));
+
+      if (permissionIdsToRemove.length === 0) {
+        return;
       }
+
+      await db
+        .delete(schema.rolePermissions)
+        .where(
+          and(
+            eq(schema.rolePermissions.roleId, roleId),
+            inArray(schema.rolePermissions.permissionId, permissionIdsToRemove),
+          ),
+        );
     };
 
     // Special handling: ensure read_only doesn't have admin permissions
@@ -132,7 +134,7 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         "telemetry.events.view",
         "telemetry.events.listRecentForWorkspace",
         "telemetry.stats.summaryByRoute",
-      ];
+      ] as const;
       await removePermissionsFromRole(resolvedRoleId, adminPermissions);
     }
 
@@ -144,7 +146,7 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         "cms.content_directories.create",
         "cms.content_directories.update",
         "cms.content_directories.delete",
-      ]);
+      ] as const);
     }
   }
 }

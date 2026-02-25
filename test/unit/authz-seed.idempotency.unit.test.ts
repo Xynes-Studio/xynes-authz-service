@@ -166,9 +166,10 @@ class FakeAuthzDb {
         const [roleId, ...rest] = params;
         if (!roleId) return;
 
-        const permissionId = rest[0];
-        if (permissionId) {
-          dbState.rolePermissions.delete(`${roleId}|${permissionId}`);
+        if (rest.length > 0) {
+          for (const permissionId of rest) {
+            dbState.rolePermissions.delete(`${roleId}|${permissionId}`);
+          }
           return;
         }
 
