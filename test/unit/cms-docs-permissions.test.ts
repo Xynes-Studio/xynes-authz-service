@@ -32,12 +32,17 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
     ] as const;
 
     const cmsCommentPermissions = ["cms.comments.moderate"] as const;
+    const cmsDirectoryPermissions = [
+      "cms.content_directories.listForWorkspace",
+      "cms.content_directories.create",
+    ] as const;
 
     // Combined array for potential future use
     const _allNewPermissions = [
       ...docsPermissions,
       ...cmsContentPermissions,
       ...cmsCommentPermissions,
+      ...cmsDirectoryPermissions,
     ] as const;
 
     test("includes all required Docs permissions", () => {
@@ -57,6 +62,13 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
     test("includes CMS comments.moderate permission", () => {
       const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
       expect(keys.has("cms.comments.moderate")).toBe(true);
+    });
+
+    test("includes content directory list/create permissions", () => {
+      const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
+      for (const key of cmsDirectoryPermissions) {
+        expect(keys.has(key)).toBe(true);
+      }
     });
 
     test("all permission keys are unique", () => {
@@ -92,6 +104,9 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_entry.getPublishedBySlug",
       // CMS Comments
       "cms.comments.moderate",
+      // CMS content directories
+      "cms.content_directories.listForWorkspace",
+      "cms.content_directories.create",
     ] as const;
 
     test("role exists", () => {
@@ -127,6 +142,9 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_entry.getPublishedBySlug",
       // CMS Comments
       "cms.comments.moderate",
+      // CMS content directories
+      "cms.content_directories.listForWorkspace",
+      "cms.content_directories.create",
     ] as const;
 
     test("role exists", () => {
@@ -152,6 +170,7 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "docs.document.read",
       "cms.content_entry.listPublished",
       "cms.content_entry.getPublishedBySlug",
+      "cms.content_directories.listForWorkspace",
     ] as const;
 
     const deniedPermissions = [
@@ -165,6 +184,8 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_entry.publish",
       // CMS Comments admin
       "cms.comments.moderate",
+      // CMS content directory write
+      "cms.content_directories.create",
     ] as const;
 
     test("role exists", () => {

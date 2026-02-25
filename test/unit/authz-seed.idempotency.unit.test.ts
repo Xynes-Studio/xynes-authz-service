@@ -240,4 +240,23 @@ describe("seedAuthz (Unit, in-memory DB)", () => {
     await seedAuthz({ db: db as unknown as AuthzDb });
     expect(db.rolePermissions.has(`${readOnlyRoleId}|${listAdminPermId}`)).toBe(false);
   });
+
+  test("removes cms.content_directories.create from read_only on reseed", async () => {
+    const db = new FakeAuthzDb();
+    await seedAuthz({ db: db as unknown as AuthzDb });
+
+    const readOnlyRoleId = db.roles.get("read_only")?.id;
+    expect(readOnlyRoleId).toBeTruthy();
+
+    const createDirectoryPermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.content_directories.create",
+    )?.id;
+    expect(createDirectoryPermId).toBeTruthy();
+
+    db.rolePermissions.add(`${readOnlyRoleId}|${createDirectoryPermId}`);
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${createDirectoryPermId}`)).toBe(true);
+
+    await seedAuthz({ db: db as unknown as AuthzDb });
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${createDirectoryPermId}`)).toBe(false);
+  });
 });
