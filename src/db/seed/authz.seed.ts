@@ -103,6 +103,7 @@ export async function seedAuthz({ db }: { db: AuthzDb }) {
         "cms.content_entry.create",
         "cms.content_entry.update",
         "cms.content_entry.publish",
+        "cms.content_directories.create",
         "cms.comments.moderate",
         "docs.document.create",
         "docs.document.update",
