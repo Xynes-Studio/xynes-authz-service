@@ -38,6 +38,18 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_directories.update",
       "cms.content_directories.delete",
     ] as const;
+    const cmsEntryAuthoringPermissions = [
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.delete",
+      "cms.entry.publish",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.collaborators.set",
+      "cms.entry.favorite.toggle",
+      "cms.entry.favorite.list",
+      "cms.entry.share.generateInternalLink",
+    ] as const;
 
     // Combined array for potential future use
     const _allNewPermissions = [
@@ -45,6 +57,7 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       ...cmsContentPermissions,
       ...cmsCommentPermissions,
       ...cmsDirectoryPermissions,
+      ...cmsEntryAuthoringPermissions,
     ] as const;
 
     test("includes all required Docs permissions", () => {
@@ -69,6 +82,13 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
     test("includes content directory list/create permissions", () => {
       const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
       for (const key of cmsDirectoryPermissions) {
+        expect(keys.has(key)).toBe(true);
+      }
+    });
+
+    test("includes cms.entry.* authoring permissions", () => {
+      const keys = new Set(AUTHZ_PERMISSIONS.map((p) => p.key));
+      for (const key of cmsEntryAuthoringPermissions) {
         expect(keys.has(key)).toBe(true);
       }
     });
@@ -111,6 +131,17 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_directories.create",
       "cms.content_directories.update",
       "cms.content_directories.delete",
+      // CMS entry authoring
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.delete",
+      "cms.entry.publish",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.collaborators.set",
+      "cms.entry.favorite.toggle",
+      "cms.entry.favorite.list",
+      "cms.entry.share.generateInternalLink",
     ] as const;
 
     test("role exists", () => {
@@ -148,6 +179,17 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.comments.moderate",
       // CMS content directories
       "cms.content_directories.listForWorkspace",
+      // CMS entry authoring
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.delete",
+      "cms.entry.publish",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.collaborators.set",
+      "cms.entry.favorite.toggle",
+      "cms.entry.favorite.list",
+      "cms.entry.share.generateInternalLink",
     ] as const;
     const editorDeniedPermissions = [
       "cms.content_directories.create",
@@ -187,6 +229,9 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_entry.listPublished",
       "cms.content_entry.getPublishedBySlug",
       "cms.content_directories.listForWorkspace",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.favorite.list",
     ] as const;
 
     const deniedPermissions = [
@@ -198,6 +243,13 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
       "cms.content_entry.create",
       "cms.content_entry.update",
       "cms.content_entry.publish",
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.delete",
+      "cms.entry.publish",
+      "cms.entry.collaborators.set",
+      "cms.entry.favorite.toggle",
+      "cms.entry.share.generateInternalLink",
       // CMS Comments admin
       "cms.comments.moderate",
       // CMS content directory write
@@ -256,7 +308,7 @@ describe("AUTHZ-RBAC-2: CMS & Docs Permissions (Unit)", () => {
     test("all permission keys follow service.resource.action format", () => {
       // Pattern: service.resource.action (service/resource may contain underscores)
       // Examples: docs.document.create, cms.blog_entry.read, telemetry.events.view
-      const keyPattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+$/;
+      const keyPattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+(?:\.[a-zA-Z]+)*$/;
       for (const perm of AUTHZ_PERMISSIONS) {
         expect(keyPattern.test(perm.key)).toBe(true);
       }

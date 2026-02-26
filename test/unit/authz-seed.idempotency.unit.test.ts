@@ -237,6 +237,18 @@ describe("seedAuthz (Unit, in-memory DB)", () => {
     expect(has("read_only", "cms.content_directories.create")).toBe(false);
     expect(has("read_only", "cms.content_directories.update")).toBe(false);
     expect(has("read_only", "cms.content_directories.delete")).toBe(false);
+
+    expect(has("workspace_owner", "cms.entry.create")).toBe(true);
+    expect(has("workspace_owner", "cms.entry.share.generateInternalLink")).toBe(
+      true,
+    );
+    expect(has("content_editor", "cms.entry.create")).toBe(true);
+    expect(has("content_editor", "cms.entry.favorite.toggle")).toBe(true);
+    expect(has("read_only", "cms.entry.listByDirectory")).toBe(true);
+    expect(has("read_only", "cms.entry.getById")).toBe(true);
+    expect(has("read_only", "cms.entry.favorite.list")).toBe(true);
+    expect(has("read_only", "cms.entry.create")).toBe(false);
+    expect(has("read_only", "cms.entry.share.generateInternalLink")).toBe(false);
   });
 
   test("removes cms.blog_entry.listAdmin from read_only on reseed", async () => {
@@ -299,6 +311,29 @@ describe("seedAuthz (Unit, in-memory DB)", () => {
     await seedAuthz({ db: db as unknown as AuthzDb });
     expect(db.rolePermissions.has(`${readOnlyRoleId}|${updatePermId}`)).toBe(false);
     expect(db.rolePermissions.has(`${readOnlyRoleId}|${deletePermId}`)).toBe(false);
+  });
+
+  test("removes cms.entry.create from read_only on reseed", async () => {
+    const db = new FakeAuthzDb();
+    await seedAuthz({ db: db as unknown as AuthzDb });
+
+    const readOnlyRoleId = db.roles.get("read_only")?.id;
+    expect(readOnlyRoleId).toBeTruthy();
+
+    const entryCreatePermId = [...db.permissions.values()].find(
+      (p) => p.key === "cms.entry.create",
+    )?.id;
+    expect(entryCreatePermId).toBeTruthy();
+
+    db.rolePermissions.add(`${readOnlyRoleId}|${entryCreatePermId}`);
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${entryCreatePermId}`)).toBe(
+      true,
+    );
+
+    await seedAuthz({ db: db as unknown as AuthzDb });
+    expect(db.rolePermissions.has(`${readOnlyRoleId}|${entryCreatePermId}`)).toBe(
+      false,
+    );
   });
 
   test("removes content directory write permissions from content_editor on reseed", async () => {

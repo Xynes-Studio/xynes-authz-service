@@ -132,6 +132,35 @@ export const AUTHZ_PERMISSIONS = [
   },
 
   // ───────────────────────────────────────────────────────────────────────────
+  // CMS Entry Authoring (Directory-First)
+  // ───────────────────────────────────────────────────────────────────────────
+  { key: "cms.entry.create", description: "Create directory-first CMS entries" },
+  { key: "cms.entry.update", description: "Update directory-first CMS entries" },
+  { key: "cms.entry.delete", description: "Delete directory-first CMS entries" },
+  { key: "cms.entry.publish", description: "Publish directory-first CMS entries" },
+  {
+    key: "cms.entry.listByDirectory",
+    description: "List CMS entries by directory for authoring",
+  },
+  { key: "cms.entry.getById", description: "Read CMS entry by ID" },
+  {
+    key: "cms.entry.collaborators.set",
+    description: "Set CMS entry collaborators",
+  },
+  {
+    key: "cms.entry.favorite.toggle",
+    description: "Toggle favorite state for a CMS entry",
+  },
+  {
+    key: "cms.entry.favorite.list",
+    description: "List favorited CMS entries for current actor",
+  },
+  {
+    key: "cms.entry.share.generateInternalLink",
+    description: "Generate internal share link for CMS entry",
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
   // CMS Comments (AUTHZ-RBAC-2)
   // ───────────────────────────────────────────────────────────────────────────
   { key: "cms.comments.create", description: "Create comments" },
@@ -230,6 +259,18 @@ export const AUTHZ_ROLES = [
       "cms.content_types.listForWorkspace",
       "cms.content_directories.listForWorkspace",
 
+      // CMS Entry Authoring (Directory-First)
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.delete",
+      "cms.entry.publish",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.collaborators.set",
+      "cms.entry.favorite.toggle",
+      "cms.entry.favorite.list",
+      "cms.entry.share.generateInternalLink",
+
       // CMS Comments (AUTHZ-RBAC-2: moderate included)
       "cms.comments.create",
       "cms.comments.listForEntry",
@@ -269,6 +310,11 @@ export const AUTHZ_ROLES = [
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
       "cms.content_directories.listForWorkspace",
+
+      // CMS Entry Authoring (Directory-First): read-style only
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.favorite.list",
 
       // Workspaces (global)
       "accounts.workspaces.listForUser",

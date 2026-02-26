@@ -28,7 +28,7 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
     test("permission keys follow naming convention", () => {
       // Format: service.resource.action (resource may contain underscores)
       // Examples: docs.document.create, cms.blog_entry.read, telemetry.events.view
-      const pattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+$/;
+      const pattern = /^[a-z_]+\.[a-z_]+\.[a-zA-Z]+(?:\.[a-zA-Z]+)*$/;
       for (const perm of AUTHZ_PERMISSIONS) {
         expect(pattern.test(perm.key)).toBe(true);
       }
@@ -140,6 +140,16 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       "cms.content_entry.listPublished",
       "cms.content_entry.getPublishedBySlug",
       "cms.comments.moderate",
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.delete",
+      "cms.entry.publish",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.collaborators.set",
+      "cms.entry.favorite.toggle",
+      "cms.entry.favorite.list",
+      "cms.entry.share.generateInternalLink",
     ] as const;
 
     test("includes all AUTHZ-RBAC-2 permissions", () => {
@@ -182,6 +192,19 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(readOnly?.permissions.includes("cms.content_entry.publish")).toBe(
         false,
       );
+      expect(readOnly?.permissions.includes("cms.entry.create")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.entry.update")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.entry.delete")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.entry.publish")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.entry.collaborators.set")).toBe(
+        false,
+      );
+      expect(readOnly?.permissions.includes("cms.entry.favorite.toggle")).toBe(
+        false,
+      );
+      expect(
+        readOnly?.permissions.includes("cms.entry.share.generateInternalLink"),
+      ).toBe(false);
       expect(readOnly?.permissions.includes("cms.comments.moderate")).toBe(
         false,
       );
@@ -200,6 +223,13 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(
         readOnly?.permissions.includes("cms.content_entry.getPublishedBySlug"),
       ).toBe(true);
+      expect(readOnly?.permissions.includes("cms.entry.listByDirectory")).toBe(
+        true,
+      );
+      expect(readOnly?.permissions.includes("cms.entry.getById")).toBe(true);
+      expect(readOnly?.permissions.includes("cms.entry.favorite.list")).toBe(
+        true,
+      );
     });
   });
 
