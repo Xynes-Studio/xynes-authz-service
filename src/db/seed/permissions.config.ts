@@ -134,10 +134,22 @@ export const AUTHZ_PERMISSIONS = [
   // ───────────────────────────────────────────────────────────────────────────
   // CMS Entry Authoring (Directory-First)
   // ───────────────────────────────────────────────────────────────────────────
-  { key: "cms.entry.create", description: "Create directory-first CMS entries" },
-  { key: "cms.entry.update", description: "Update directory-first CMS entries" },
-  { key: "cms.entry.delete", description: "Delete directory-first CMS entries" },
-  { key: "cms.entry.publish", description: "Publish directory-first CMS entries" },
+  {
+    key: "cms.entry.create",
+    description: "Create directory-first CMS entries",
+  },
+  {
+    key: "cms.entry.update",
+    description: "Update directory-first CMS entries",
+  },
+  {
+    key: "cms.entry.delete",
+    description: "Delete directory-first CMS entries",
+  },
+  {
+    key: "cms.entry.publish",
+    description: "Publish directory-first CMS entries",
+  },
   {
     key: "cms.entry.listByDirectory",
     description: "List CMS entries by directory for authoring",
@@ -208,13 +220,31 @@ export const AUTHZ_ROLES = [
   },
 
   // ───────────────────────────────────────────────────────────────────────────
-  // workspace_member: Basic member role (minimal permissions)
+  // workspace_member: Basic contributor role (authoring without admin/publish)
   // ───────────────────────────────────────────────────────────────────────────
   {
     key: "workspace_member",
-    description: "Workspace Member",
+    description: "Workspace Member (basic contributor)",
     permissions: [
+      "accounts.workspaces.listForUser",
       "accounts.workspace_members.listForWorkspace",
+
+      // Docs: read only
+      "docs.document.read",
+
+      // CMS dashboard read primitives
+      "cms.templates.listGlobal",
+      "cms.content_types.listForWorkspace",
+      "cms.content_directories.listForWorkspace",
+
+      // CMS Entry Authoring (Directory-First): draft authoring allowed
+      "cms.entry.create",
+      "cms.entry.update",
+      "cms.entry.listByDirectory",
+      "cms.entry.getById",
+      "cms.entry.favorite.toggle",
+      "cms.entry.favorite.list",
+      "cms.entry.share.generateInternalLink",
     ] as PermissionKey[],
   },
 

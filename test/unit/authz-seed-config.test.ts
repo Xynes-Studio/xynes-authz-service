@@ -196,9 +196,9 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(readOnly?.permissions.includes("cms.entry.update")).toBe(false);
       expect(readOnly?.permissions.includes("cms.entry.delete")).toBe(false);
       expect(readOnly?.permissions.includes("cms.entry.publish")).toBe(false);
-      expect(readOnly?.permissions.includes("cms.entry.collaborators.set")).toBe(
-        false,
-      );
+      expect(
+        readOnly?.permissions.includes("cms.entry.collaborators.set"),
+      ).toBe(false);
       expect(readOnly?.permissions.includes("cms.entry.favorite.toggle")).toBe(
         false,
       );
@@ -230,6 +230,33 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(readOnly?.permissions.includes("cms.entry.favorite.list")).toBe(
         true,
       );
+    });
+
+    test("workspace_member has dashboard and draft authoring permissions only", () => {
+      const member = AUTHZ_ROLES.find((r) => r.key === "workspace_member");
+      expect(member).toBeTruthy();
+
+      expect(
+        member?.permissions.includes(
+          "cms.content_directories.listForWorkspace",
+        ),
+      ).toBe(true);
+      expect(member?.permissions.includes("cms.entry.listByDirectory")).toBe(
+        true,
+      );
+      expect(member?.permissions.includes("cms.entry.getById")).toBe(true);
+      expect(member?.permissions.includes("cms.entry.create")).toBe(true);
+      expect(member?.permissions.includes("cms.entry.update")).toBe(true);
+
+      expect(member?.permissions.includes("cms.entry.publish")).toBe(false);
+      expect(member?.permissions.includes("cms.entry.delete")).toBe(false);
+      expect(member?.permissions.includes("cms.entry.collaborators.set")).toBe(
+        false,
+      );
+      expect(member?.permissions.includes("cms.content_type.manage")).toBe(
+        false,
+      );
+      expect(member?.permissions.includes("cms.comments.moderate")).toBe(false);
     });
   });
 

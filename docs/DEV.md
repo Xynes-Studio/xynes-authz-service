@@ -175,7 +175,7 @@ Examples:
 | `workspace_owner` | Workspace owner | All permissions |
 | `content_editor` | Content creator/editor | All CMS/Docs + moderate |
 | `read_only` | Read-only user | Read/list published only |
-| `workspace_member` | Basic member | Minimal permissions |
+| `workspace_member` | Basic contributor | CMS dashboard read + draft authoring (no publish/admin) |
 
 ### Permission Categories
 
@@ -191,10 +191,10 @@ Examples:
 - `docs.document.update` – Update documents
 - `docs.document.listByWorkspace` – List workspace documents
 
-**CMS Content Types:**
-- `cms.content_type.manage` – Manage content types (CRUD)
+**CMS Content Types (Legacy Compatibility):**
+- `cms.content_type.manage` – Manage legacy content-type/template configuration
 
-**CMS Content Entries:**
+**CMS Content Entries (Directory-First Authoring):**
 - `cms.content_entry.create` – Create entries
 - `cms.content_entry.update` – Update entries
 - `cms.content_entry.publish` – Publish entries

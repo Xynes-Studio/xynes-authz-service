@@ -100,7 +100,7 @@ New permissions added (AUTHZ-COVERAGE-1 + AUTHZ-CONTENT-2):
 - `cms.blog_entry.listAdmin`
 - `cms.blog_entry.updateMeta`
 - `cms.templates.listGlobal`
-- `cms.content_types.listForWorkspace`
+- `cms.content_types.listForWorkspace` (legacy compatibility)
 - `cms.content.create`
 - `cms.content.listPublished`
 - `cms.content.getPublishedBySlug`
