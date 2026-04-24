@@ -144,6 +144,7 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       "cms.entry.update",
       "cms.entry.delete",
       "cms.entry.publish",
+      "cms.entry.status.set",
       "cms.entry.listByDirectory",
       "cms.entry.getById",
       "cms.entry.collaborators.set",
@@ -196,6 +197,9 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(readOnly?.permissions.includes("cms.entry.update")).toBe(false);
       expect(readOnly?.permissions.includes("cms.entry.delete")).toBe(false);
       expect(readOnly?.permissions.includes("cms.entry.publish")).toBe(false);
+      expect(readOnly?.permissions.includes("cms.entry.status.set")).toBe(
+        false,
+      );
       expect(
         readOnly?.permissions.includes("cms.entry.collaborators.set"),
       ).toBe(false);
@@ -249,6 +253,7 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(member?.permissions.includes("cms.entry.update")).toBe(true);
 
       expect(member?.permissions.includes("cms.entry.publish")).toBe(false);
+      expect(member?.permissions.includes("cms.entry.status.set")).toBe(false);
       expect(member?.permissions.includes("cms.entry.delete")).toBe(false);
       expect(member?.permissions.includes("cms.entry.collaborators.set")).toBe(
         false,
@@ -257,6 +262,16 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
         false,
       );
       expect(member?.permissions.includes("cms.comments.moderate")).toBe(false);
+    });
+
+    test("content_editor can mutate entry status while read_only cannot", () => {
+      const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
+      const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
+
+      expect(editor?.permissions.includes("cms.entry.status.set")).toBe(true);
+      expect(readOnly?.permissions.includes("cms.entry.status.set")).toBe(
+        false,
+      );
     });
   });
 

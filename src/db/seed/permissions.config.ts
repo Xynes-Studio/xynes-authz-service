@@ -151,6 +151,10 @@ export const AUTHZ_PERMISSIONS = [
     description: "Publish directory-first CMS entries",
   },
   {
+    key: "cms.entry.status.set",
+    description: "Set lifecycle status for directory-first CMS entries",
+  },
+  {
     key: "cms.entry.listByDirectory",
     description: "List CMS entries by directory for authoring",
   },
@@ -294,6 +298,7 @@ export const AUTHZ_ROLES = [
       "cms.entry.update",
       "cms.entry.delete",
       "cms.entry.publish",
+      "cms.entry.status.set",
       "cms.entry.listByDirectory",
       "cms.entry.getById",
       "cms.entry.collaborators.set",
