@@ -46,6 +46,21 @@ describe("Workspace Admin Integrations — permission catalog (Unit)", () => {
     "platform.domain_bindings.manage",
   ] as const;
 
+  // Read-side platform permissions. Per the epic source-of-truth
+  // (workspace-admin-integrations.md §10, role mapping table):
+  //   workspace_member -> None (domains) / None (API keys)
+  //   content_editor   -> "List only if needed by CMS UI" (domains) / None (API keys)
+  //   read_only        -> None / None
+  //
+  // For MVP, NO restricted role receives any platform.* read permission.
+  // If content_editor needs domain list in the future, add it to the
+  // role's allowlist AND update this test intentionally.
+  const platformReadPermissions = [
+    "platform.domains.list",
+    "platform.api_keys.list",
+    "platform.api_keys.usage.read",
+  ] as const;
+
   // ─────────────────────────────────────────────────────────────────────────
   // PERMISSION DEFINITIONS
   // ─────────────────────────────────────────────────────────────────────────
@@ -117,6 +132,14 @@ describe("Workspace Admin Integrations — permission catalog (Unit)", () => {
         expect(member?.permissions.includes(key)).toBe(false);
       }
     });
+
+    test("does NOT include any platform read permission (MVP)", () => {
+      const member = AUTHZ_ROLES.find((r) => r.key === "workspace_member");
+      expect(member).toBeTruthy();
+      for (const key of platformReadPermissions) {
+        expect(member?.permissions.includes(key)).toBe(false);
+      }
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -139,6 +162,14 @@ describe("Workspace Admin Integrations — permission catalog (Unit)", () => {
         expect(editor?.permissions.includes(key)).toBe(false);
       }
     });
+
+    test("does NOT include any platform read permission (MVP)", () => {
+      const editor = AUTHZ_ROLES.find((r) => r.key === "content_editor");
+      expect(editor).toBeTruthy();
+      for (const key of platformReadPermissions) {
+        expect(editor?.permissions.includes(key)).toBe(false);
+      }
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -158,6 +189,14 @@ describe("Workspace Admin Integrations — permission catalog (Unit)", () => {
       const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
       expect(readOnly).toBeTruthy();
       for (const key of domainLifecycleWritePermissions) {
+        expect(readOnly?.permissions.includes(key)).toBe(false);
+      }
+    });
+
+    test("does NOT include any platform read permission (MVP)", () => {
+      const readOnly = AUTHZ_ROLES.find((r) => r.key === "read_only");
+      expect(readOnly).toBeTruthy();
+      for (const key of platformReadPermissions) {
         expect(readOnly?.permissions.includes(key)).toBe(false);
       }
     });

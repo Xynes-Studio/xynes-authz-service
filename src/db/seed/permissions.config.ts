@@ -5,7 +5,9 @@
  * It is the single source of truth for what each workspace role can do.
  *
  * Permission key format: {service}.{resource}.{action}
- * Examples: docs.document.create, cms.content_entry.publish
+ *   or for nested sub-resources: {service}.{resource}.{sub_resource}.{action}
+ * Examples: docs.document.create, cms.content_entry.publish,
+ *   cms.entry.status.set, platform.api_keys.usage.read
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,7 +130,10 @@ export const AUTHZ_PERMISSIONS = [
   },
   {
     key: "cms.content_directories.delete",
-    description: "Delete content directories",
+    // Key uses DELETE verb (REST convention); actual behavior is soft-disable
+    // (status flip to 'disabled'). Matches HTTP `DELETE` route and epic SOT:
+    // "Delete/disable a domain" — see workspace-admin-integrations.md §10.
+    description: "Disable a workspace verified domain",
   },
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -226,6 +231,9 @@ export const AUTHZ_PERMISSIONS = [
   },
   {
     key: "platform.domains.delete",
+    // Key uses DELETE verb (REST convention); actual behavior is soft-disable
+    // (status flip to 'disabled'). Matches HTTP `DELETE` route and epic SOT:
+    // "Delete/disable a domain" — see workspace-admin-integrations.md §10.
     description: "Disable a workspace verified domain",
   },
   {
