@@ -201,6 +201,53 @@ export const AUTHZ_PERMISSIONS = [
     key: "telemetry.stats.summaryByRoute",
     description: "Read telemetry route summary statistics for workspace",
   },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Workspace Admin Integrations (Platform)
+  //
+  // Source of truth:
+  //   - xynes/xynes-infra/infra/architecture/epics/workspace-admin-integrations.md
+  //   - xynes/xynes-infra/docs/plans/2026-04-24-workspace-admin-integrations-backend-foundation.md
+  //
+  // Owned by the Auth dashboard (Workspace Admin). CMS consumes these
+  // primitives contextually; it must not receive API key lifecycle writes.
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    key: "platform.domains.list",
+    description: "List workspace verified domains",
+  },
+  {
+    key: "platform.domains.create",
+    description: "Add a workspace verified domain (pending verification)",
+  },
+  {
+    key: "platform.domains.verify",
+    description: "Trigger DNS verification for a workspace domain",
+  },
+  {
+    key: "platform.domains.delete",
+    description: "Disable a workspace verified domain",
+  },
+  {
+    key: "platform.domain_bindings.manage",
+    description: "Manage workspace domain bindings for apps (CMS, etc.)",
+  },
+  {
+    key: "platform.api_keys.list",
+    description: "List workspace global API keys (metadata only, no secrets)",
+  },
+  {
+    key: "platform.api_keys.create",
+    description: "Create a workspace global API key (raw key shown once)",
+  },
+  {
+    key: "platform.api_keys.revoke",
+    description: "Revoke a workspace global API key",
+  },
+  {
+    key: "platform.api_keys.usage.read",
+    description: "Read workspace global API key usage telemetry",
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
