@@ -105,5 +105,18 @@ New permissions added (AUTHZ-COVERAGE-1 + AUTHZ-CONTENT-2):
 - `cms.content.listPublished`
 - `cms.content.getPublishedBySlug`
 
+Workspace Admin Integrations (2026-04-24, backend-foundation plan Task 2):
+- `platform.domains.list`, `platform.domains.create`, `platform.domains.verify`, `platform.domains.delete`
+- `platform.domain_bindings.manage`
+- `platform.api_keys.list`, `platform.api_keys.create`, `platform.api_keys.revoke`, `platform.api_keys.usage.read`
+
+Role wiring for the new keys:
+- `workspace_owner` and `super_admin` are catalog-derived (`AUTHZ_PERMISSIONS.map(...)`) and therefore inherit every new `platform.*` key automatically.
+- `workspace_member`, `content_editor`, and `read_only` use explicit allowlists — they do **not** receive any API-key lifecycle write or domain-lifecycle write.
+
+Guard tests (do not remove without updating the cross-repo contract first):
+- `test/unit/workspace-admin-integrations-permissions.test.ts` (bun unit test)
+- `xynes-infra/scripts/test/workspace-admin-integrations-authz-permissions.test.sh` (infra cross-repo contract smoke)
+
 Dev docs:
 - `docs/DEV.md`
