@@ -230,6 +230,20 @@ export const AUTHZ_PERMISSIONS = [
     description: "Trigger DNS verification for a workspace domain",
   },
   {
+    // Re-issue a fresh DNS TXT verification token for an existing
+    // pending/failed domain when the workspace owner has lost the
+    // original one-time reveal. See workspace-admin-integrations.md §18+
+    // (verification UX hardening). Has the SAME effective grants as
+    // platform.domains.create — both are catalog-derived for
+    // workspace_owner / super_admin, and lower-tier roles
+    // (workspace_member / content_editor / read_only) do not receive
+    // either. Modeled as its own key (rather than reusing
+    // platform.domains.create on the gateway side) to preserve the
+    // "route action_key === permission key" invariant.
+    key: "platform.domains.regenerateVerification",
+    description: "Re-issue a fresh DNS TXT verification token for a pending/failed workspace domain",
+  },
+  {
     key: "platform.domains.delete",
     // Key uses DELETE verb (REST convention); actual behavior is soft-disable
     // (status flip to 'disabled'). Matches HTTP `DELETE` route and epic SOT:
