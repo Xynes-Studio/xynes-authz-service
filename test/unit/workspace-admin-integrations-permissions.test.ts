@@ -26,6 +26,7 @@ describe("Workspace Admin Integrations — permission catalog (Unit)", () => {
     "platform.domains.list",
     "platform.domains.create",
     "platform.domains.verify",
+    "platform.domains.regenerateVerification",
     "platform.domains.delete",
     "platform.domain_bindings.manage",
     "platform.api_keys.list",
@@ -42,6 +43,7 @@ describe("Workspace Admin Integrations — permission catalog (Unit)", () => {
   const domainLifecycleWritePermissions = [
     "platform.domains.create",
     "platform.domains.verify",
+    "platform.domains.regenerateVerification",
     "platform.domains.delete",
     "platform.domain_bindings.manage",
   ] as const;
