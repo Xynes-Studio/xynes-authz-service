@@ -118,5 +118,19 @@ Guard tests (do not remove without updating the cross-repo contract first):
 - `test/unit/workspace-admin-integrations-permissions.test.ts` (bun unit test)
 - `xynes-infra/scripts/test/workspace-admin-integrations-authz-permissions.test.sh` (infra cross-repo contract smoke)
 
+Universal Object Storage (2026-05-13, STORAGE-3):
+- `platform.storage.providers.manage`
+- `platform.storage.objects.upload`, `platform.storage.objects.read`, `platform.storage.objects.delete`
+- `platform.storage.objects.process.retry`
+- `platform.storage.usage.read`
+
+Role wiring for the storage keys:
+- `workspace_owner` and `super_admin` are catalog-derived and inherit all 6.
+- `content_editor` gets `platform.storage.objects.{upload,read}` only — no delete, no retry, no provider config, no usage read.
+- `workspace_member` and `read_only` get `platform.storage.objects.read` only (MVP conservative default; see plan §12 open question on whether members can upload non-CMS files).
+
+Guard test:
+- `test/unit/universal-storage-permissions.test.ts` (bun unit test)
+
 Dev docs:
 - `docs/DEV.md`
