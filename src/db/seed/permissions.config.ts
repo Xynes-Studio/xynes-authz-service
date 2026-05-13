@@ -270,6 +270,48 @@ export const AUTHZ_PERMISSIONS = [
     key: "platform.api_keys.usage.read",
     description: "Read workspace global API key usage telemetry",
   },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Universal Object Storage (Platform)
+  //
+  // Source of truth:
+  //   - xynes/xynes-infra/docs/plans/2026-05-10-universal-object-storage-file-upload-api.md
+  //   - xynes/xynes-storage-service/docs/architecture.md
+  //
+  // Owned by `xynes-storage-service`. Action keys map 1:1 to gateway routes
+  // under `/workspaces/:workspaceId/storage/*`. Provider credentials are
+  // references only — raw access keys / signed URLs never leave the
+  // storage-service boundary.
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    key: "platform.storage.providers.manage",
+    description:
+      "Manage workspace storage provider configuration references (no raw credentials)",
+  },
+  {
+    key: "platform.storage.objects.upload",
+    description:
+      "Create, complete, and abort storage upload sessions for a workspace",
+  },
+  {
+    key: "platform.storage.objects.read",
+    description:
+      "Read storage object metadata and mint short-lived signed read URLs",
+  },
+  {
+    key: "platform.storage.objects.delete",
+    description:
+      "Delete or lifecycle-mark a workspace storage object (soft delete)",
+  },
+  {
+    key: "platform.storage.objects.process.retry",
+    description: "Retry failed storage processing jobs for an object",
+  },
+  {
+    key: "platform.storage.usage.read",
+    description:
+      "Read aggregated workspace storage usage (daily summaries only)",
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -318,6 +360,12 @@ export const AUTHZ_ROLES = [
       "cms.entry.favorite.toggle",
       "cms.entry.favorite.list",
       "cms.entry.share.generateInternalLink",
+
+      // Universal Object Storage (read-only for basic contributors).
+      // MVP policy: workspace_member can read object metadata and mint
+      // signed read URLs but cannot upload, delete, or retry processing.
+      // See plan §8 + §12 (open question on whether members can upload).
+      "platform.storage.objects.read",
     ] as PermissionKey[],
   },
 
@@ -384,6 +432,13 @@ export const AUTHZ_ROLES = [
       "accounts.workspaces.create",
       "accounts.workspaces.listForUser",
       "accounts.workspace_members.listForWorkspace",
+
+      // Universal Object Storage: upload + read for authoring.
+      // MVP policy: content_editor can upload media (e.g. cms_media) and
+      // read metadata. Delete + processing retry + provider config stay
+      // owner/admin-only. See plan §8 role posture.
+      "platform.storage.objects.upload",
+      "platform.storage.objects.read",
     ] as PermissionKey[],
   },
 
@@ -423,6 +478,11 @@ export const AUTHZ_ROLES = [
       // Workspaces (global)
       "accounts.workspaces.listForUser",
       "accounts.workspace_members.listForWorkspace",
+
+      // Universal Object Storage: read-only metadata + signed delivery URLs.
+      // No upload, no delete, no provider config, no processing retry.
+      // See plan §8 role posture.
+      "platform.storage.objects.read",
     ] as PermissionKey[],
   },
 
