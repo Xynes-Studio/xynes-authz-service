@@ -35,6 +35,10 @@ export const AUTHZ_PERMISSIONS = [
     key: "accounts.invites.create",
     description: "Create workspace invites",
   },
+  {
+    key: "accounts.invites.resend",
+    description: "Resend a workspace invite email",
+  },
 
   // ───────────────────────────────────────────────────────────────────────────
   // Documents (Docs Service)
