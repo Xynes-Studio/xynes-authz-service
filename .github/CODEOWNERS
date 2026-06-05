@@ -1,10 +1,10 @@
 # Default reviewers for everything
-*                                  @REPLACE_WITH_PLATFORM_TEAM
+*                                  @archan96
 
 # Specific paths (uncomment what applies)
-# /src/db/seed/permissions.config.ts   @REPLACE_WITH_SECURITY_TEAM
-# /src/db/schema.ts                    @REPLACE_WITH_DB_TEAM
-# /src/db/migrations/                  @REPLACE_WITH_DB_TEAM
-# /src/services/authz.service.ts       @REPLACE_WITH_SECURITY_TEAM
-# /test/unit/                          @REPLACE_WITH_PLATFORM_TEAM
-# /.github/                            @REPLACE_WITH_PLATFORM_TEAM
+# /src/db/seed/permissions.config.ts   @archan96
+# /src/db/schema.ts                    @archan96
+# /src/db/migrations/                  @archan96
+# /src/services/authz.service.ts       @archan96
+# /test/unit/                          @archan96
+# /.github/                            @archan96
