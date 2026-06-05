@@ -1,0 +1,10 @@
+# Default reviewers for everything
+*                                  @REPLACE_WITH_PLATFORM_TEAM
+
+# Specific paths (uncomment what applies)
+# /src/db/seed/permissions.config.ts   @REPLACE_WITH_SECURITY_TEAM
+# /src/db/schema.ts                    @REPLACE_WITH_DB_TEAM
+# /src/db/migrations/                  @REPLACE_WITH_DB_TEAM
+# /src/services/authz.service.ts       @REPLACE_WITH_SECURITY_TEAM
+# /test/unit/                          @REPLACE_WITH_PLATFORM_TEAM
+# /.github/                            @REPLACE_WITH_PLATFORM_TEAM
