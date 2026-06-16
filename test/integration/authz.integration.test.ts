@@ -304,11 +304,24 @@ describe.skipIf(process.env.RUN_INTEGRATION_TESTS !== "true")(
       expect(res.status).toBe(400);
     }, 15_000);
 
-    test("GET /health should return status ok", async () => {
+    test("GET /health should return the H-3 contract shape (HEALTHCHECK-CONTRACT.md §2)", async () => {
       const res = await app.request("/health");
+      // Live DB is reachable in integration mode → expect 200 + ok=true.
       expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body).toEqual({ status: "ok", service: "xynes-authz-service" });
+      const body = (await res.json()) as {
+        ok: boolean;
+        service: string;
+        version: string;
+        uptime_seconds: number;
+        checks: { db: string };
+      };
+      expect(body.ok).toBe(true);
+      expect(body.service).toBe("xynes-authz-service");
+      expect(typeof body.version).toBe("string");
+      expect(Number.isInteger(body.uptime_seconds)).toBe(true);
+      expect(body.uptime_seconds).toBeGreaterThanOrEqual(0);
+      expect(body.checks.db).toBe("ok");
+      expect(Object.keys(body.checks).sort()).toEqual(["db"]);
     }, 15_000);
 
     test("GET /ready should return status ready when db reachable", async () => {

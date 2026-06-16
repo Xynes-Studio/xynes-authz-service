@@ -33,10 +33,24 @@ Testing ADR reference: `xynes-cms-core/docs/adr/001-testing-strategy.md`.
 
 ## API
 ### GET /health
-Liveness check. Returns:
+Liveness check implementing the binding **HEALTHCHECK-CONTRACT.md §2** shape (see `xynes-infra/infra/release/HEALTHCHECK-CONTRACT.md`). Returns:
 ```json
-{ "status": "ok", "service": "xynes-authz-service" }
+{
+  "ok": true,
+  "service": "xynes-authz-service",
+  "version": "v0.1.0",
+  "uptime_seconds": 1234,
+  "checks": { "db": "ok" }
+}
 ```
+- **Status**: `200 OK` on happy path; `503 Service Unavailable` when `checks.db === "fail"`.
+- **Auth**: NONE required (Docker `HEALTHCHECK` + Caddy probes both run unauthenticated).
+- **Latency**: ≤ 50 ms p95 / ≤ 300 ms p99. DB probe has a 1-second timeout.
+- **Cascade avoidance** (§4): failed DB probes are cached as `"fail"` for 30 seconds to prevent retry storms from healthcheck-driven traffic.
+- **Per-service `checks` keys** (§3): only `db` (authz has no downstream; no `authz` or `gateway` probe).
+- **Logging** (§2.6): `/health` and `/ready` are EXCLUDED from the hono access-log middleware to prevent flooding log retention with probe traffic.
+- **Body never contains**: `DATABASE_URL`, `JWT_SECRET`, raw API key markers (`xynes_live_*`), stack traces, or any user-identifying value (§2.4 forbidden content; regression-guarded by `test/unit/health.route.unit.test.ts` §7.8).
+- **`version` field**: read from `XYNES_BUILD_VERSION` env at process start; falls back to `"dev"` when unset or whitespace-only.
 
 ### GET /ready
 Readiness check. Runs a fast Postgres check and returns:
@@ -134,3 +148,43 @@ Guard test:
 
 Dev docs:
 - `docs/DEV.md`
+
+## Production Dockerfile (H-3)
+
+The `Dockerfile` ships three named stages following the canonical group-H recipe (H-1 pioneer → H-2 → H-3):
+
+| Stage  | Purpose | Used by |
+|--------|---------|---------|
+| `base` | Pinned `oven/bun:1-alpine` by manifest-list digest + workdir setup | Both `dev` and `prod` |
+| `dev`  | Bind-mount-friendly target with `bun --watch` for hot reload | `xynes-infra/docker-compose.dev.yml` |
+| `prod` | Hardened runtime: non-root user (uid 1001 `xynes`), no devDependencies, no test/docs payload, no `.env*` files, HEALTHCHECK wired against `/health` | VPS compose + K8s manifests |
+
+**Three deviations from the canonical group-H skeleton** (locked by H-1):
+1. **Base image is `oven/bun:1-alpine`**, NOT `oven/bun:1` debian-slim. Drops the prod image from ~253 MB → ~140 MB.
+2. **No `build` stage**. Bun runs `src/index.ts` directly through its built-in TS support; typecheck enforced in CI (group-M `ci.yml`), not the Dockerfile.
+3. **Healthcheck uses `bun -e 'fetch(...)'`**, NOT `curl`. No extra `apk add curl` layer.
+
+### Building locally
+
+```bash
+# Build the prod target
+docker buildx build --target prod -t xynesplatform/xynes-authz-service:test --load .
+
+# Run with mock env (DB unreachable → 503 + checks.db = "fail")
+docker run --rm -p 4300:4300 \
+  -e PORT=4300 \
+  -e DATABASE_URL='postgresql://nobody@127.0.0.1:5432/nodb' \
+  -e XYNES_BUILD_VERSION='test' \
+  xynesplatform/xynes-authz-service:test
+
+# Probe /health
+curl http://127.0.0.1:4300/health
+# → {"ok":false,"service":"xynes-authz-service","version":"test","uptime_seconds":N,"checks":{"db":"fail"}}
+```
+
+### CVE waivers
+
+HIGH/CRITICAL Trivy findings against the prod image are documented in [`CVE-WAIVERS.md`](./CVE-WAIVERS.md) with rationale + remediation tracking. H-3 introduces zero new findings vs the develop-branch image. Three cross-service follow-ups are tracked:
+- **H-1-FU-2**: alpine base refresh (closes OpenSSL CVE-2026-45447).
+- **H-2-FU-1**: drizzle-orm 0.45.2 bump (closes CVE-2026-39356).
+- **H-1-FU-3**: hono ^4.12.4 bump (closes CVE-2026-22817 / 22818 / 29045).
