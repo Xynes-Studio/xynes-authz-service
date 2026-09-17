@@ -23,7 +23,7 @@ const SKIP_INTEGRATION =
 describe.skipIf(SKIP_INTEGRATION)(
   "AUTHZ-RBAC-2: CMS & Docs Permissions (Integration)",
   () => {
-    let db: Awaited<ReturnType<typeof import("../../src/db")>>["db"];
+    let db: typeof import("../../src/db").db;
 
     // Test identifiers - using UUIDs for isolation
     const TEST_WORKSPACE_ID = randomUUID();
@@ -144,7 +144,7 @@ describe.skipIf(SKIP_INTEGRATION)(
 
       expect(res.status).toBe(200);
       const body = (await res.json()) as CheckResponse;
-      return body.ok ? body.data?.allowed : false;
+      return body.ok ? body.data?.allowed ?? false : false;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

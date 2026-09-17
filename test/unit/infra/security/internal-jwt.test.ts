@@ -11,7 +11,7 @@ import {
  * Helper to create a valid HS256 JWT for testing
  */
 function createTestJwt(
-  payload: Partial<InternalJwtPayload> & Record<string, unknown>,
+  payload: object,
   signingKey: string
 ): string {
   const header = { alg: "HS256", typ: "JWT" };

@@ -109,7 +109,7 @@ describe("AUTHZ Seed Configuration (Unit)", () => {
       expect(readOnly).toBeDefined();
       expect(editor).toBeDefined();
       expect(readOnly?.permissions.length).toBeLessThan(
-        editor?.permissions.length,
+        editor?.permissions.length ?? 0,
       );
     });
   });
