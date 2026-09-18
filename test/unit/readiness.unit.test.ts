@@ -1,4 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
+import postgres from "postgres";
 import { checkPostgresReadiness } from "../../src/infra/readiness";
 
 describe("checkPostgresReadiness (Unit via injected client)", () => {
@@ -14,13 +15,13 @@ describe("checkPostgresReadiness (Unit via injected client)", () => {
     const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
       calls.push({ text: strings.join(""), values });
       return Promise.resolve([]);
-    }) as SqlClient;
+    }) as unknown as SqlClient;
     sql.end = end;
 
     await checkPostgresReadiness({
       databaseUrl: "postgres://unused",
       schemaName: "public",
-      createClient: () => sql,
+      createClient: (() => sql) as unknown as typeof postgres,
     });
 
     expect(calls.length).toBe(1);
@@ -41,7 +42,7 @@ describe("checkPostgresReadiness (Unit via injected client)", () => {
     await expect(
       checkPostgresReadiness({
         databaseUrl: "postgres://unused",
-        createClient: () => sql,
+        createClient: (() => sql) as unknown as typeof postgres,
       })
     ).rejects.toThrow("boom");
 

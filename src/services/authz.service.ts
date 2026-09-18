@@ -55,7 +55,7 @@ export async function checkPermission(
   const fetchUserRoles =
     deps?.fetchUserRoles ??
     (async (u: string, w: string) => {
-      const { db } = await getDb();
+      const { db } = (await getDb()) as { db: typeof import("../db").db };
       return db
         .select({
           roleKey: roles.key,
@@ -70,7 +70,7 @@ export async function checkPermission(
     deps?.roleHasPermission ??
     (async (roleIds: string[], permissionKey: string) => {
       if (roleIds.length === 0) return false;
-      const { db } = await getDb();
+      const { db } = (await getDb()) as { db: typeof import("../db").db };
       const rows = await db
         .select({ id: permissions.id })
         .from(rolePermissions)
