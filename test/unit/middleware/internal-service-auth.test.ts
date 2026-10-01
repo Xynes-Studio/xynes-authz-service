@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { Hono } from "hono";
-import { requireInternalServiceAuth } from "../../../src/middleware/internal-service-auth";
+import { requireInternalServiceAuth } from "../../../src/middleware/legacy-read-check-auth";
 
 type ErrorEnvelope = {
   ok: false;
@@ -28,7 +28,10 @@ describe("requireInternalServiceAuth (unit)", () => {
 
     const res = await app.request("/authz/check", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Internal-Service-Token": token },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-Service-Token": token,
+      },
       body: JSON.stringify({}),
     });
 

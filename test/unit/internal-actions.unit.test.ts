@@ -1,3 +1,4 @@
+import { signedInit } from "../support/internal-request";
 import { describe, it, expect, beforeEach } from "bun:test";
 import { Hono } from "hono";
 import app from "../../src";
@@ -9,7 +10,7 @@ describe("Internal Authz Actions (unit)", () => {
   });
 
   it("rejects missing internal auth token", async () => {
-    const res = await app.request("/internal/authz-actions", {
+    const res = await signedRequest(app, "/internal/authz-actions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actionKey: "authz.assignRole", payload: {} }),
@@ -19,7 +20,7 @@ describe("Internal Authz Actions (unit)", () => {
   });
 
   it("rejects invalid payload", async () => {
-    const res = await app.request("/internal/authz-actions", {
+    const res = await signedRequest(app, "/internal/authz-actions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,7 +47,7 @@ describe("Internal Authz Actions (unit)", () => {
     const testApp = new Hono();
     testApp.route("/internal", internalRoute);
 
-    const res = await testApp.request("/internal/authz-actions", {
+    const res = await signedRequest(testApp, "/internal/authz-actions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -67,3 +68,17 @@ describe("Internal Authz Actions (unit)", () => {
     expect(body.data.roles).toHaveLength(1);
   });
 });
+
+function signedRequest(app: Hono, path: string, init: RequestInit) {
+  const headers = new Headers(init.headers);
+  const body = typeof init.body === "string" ? JSON.parse(init.body) : null;
+  if (body?.payload?.workspaceId)
+    headers.set("X-Workspace-Id", body.payload.workspaceId);
+  const prepared = { ...init, headers };
+  return app.request(
+    path,
+    headers.has("X-Internal-Service-Token")
+      ? signedInit(path, prepared)
+      : prepared,
+  );
+}

@@ -13,11 +13,21 @@ authzRoutes.use(
     maxSize: AUTHZ_CHECK_MAX_BODY_BYTES,
     onError: (c) => {
       const requestId = getOrCreateRequestId(c);
-      return c.json(createErrorResponse("VALIDATION_ERROR", "Request body too large", requestId), 400);
+      return c.json(
+        createErrorResponse(
+          "VALIDATION_ERROR",
+          "Request body too large",
+          requestId,
+        ),
+        400,
+      );
     },
-  })
+  }),
 );
-authzRoutes.use("*", requireInternalServiceAuth());
+authzRoutes.use(
+  "*",
+  requireInternalServiceAuth({ allowLegacyReadCheck: true }),
+);
 authzRoutes.post("/check", authzCheck);
 
 export default authzRoutes;
