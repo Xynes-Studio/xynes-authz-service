@@ -8,11 +8,13 @@ import { listRolesForWorkspace } from "../../services/role-listing.service";
 import { ensureAuthzSeeded } from "../../infra/ensure-seeded";
 
 type InternalRouteDeps = {
+  assignRole?: typeof assignRole;
   listRolesForWorkspace?: typeof listRolesForWorkspace;
   ensureAuthzSeeded?: typeof ensureAuthzSeeded;
 };
 
 export function createInternalRoute(deps: InternalRouteDeps = {}) {
+  const resolvedAssignRole = deps.assignRole ?? assignRole;
   const resolvedListRolesForWorkspace =
     deps.listRolesForWorkspace ?? listRolesForWorkspace;
   const resolvedEnsureAuthzSeeded = deps.ensureAuthzSeeded ?? ensureAuthzSeeded;
@@ -65,15 +67,7 @@ export function createInternalRoute(deps: InternalRouteDeps = {}) {
   internalRoute.post("/authz-actions", async (c) => {
     const requestId = getOrCreateRequestId(c);
 
-    let body: unknown;
-    try {
-      body = await c.req.json();
-    } catch {
-      return c.json(
-        createErrorResponse("VALIDATION_ERROR", "Invalid JSON body", requestId),
-        400,
-      );
-    }
+    const body: unknown = await c.req.json();
 
     const parsed = actionRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -104,31 +98,13 @@ export function createInternalRoute(deps: InternalRouteDeps = {}) {
 
       try {
         await resolvedEnsureAuthzSeeded();
-        await assignRole(roleParsed.data);
+        await resolvedAssignRole(roleParsed.data);
         return c.json(
           { ok: true, data: { assigned: true }, meta: { requestId } },
           200,
         );
-      } catch (e) {
-        const err = e as unknown as {
-          message?: string;
-          code?: string;
-          detail?: string;
-          constraint?: string;
-          schema?: string;
-          table?: string;
-          column?: string;
-        };
-        console.error("Failed to assign role", {
-          requestId,
-          message: err?.message,
-          code: err?.code,
-          detail: err?.detail,
-          constraint: err?.constraint,
-          schema: err?.schema,
-          table: err?.table,
-          column: err?.column,
-        });
+      } catch {
+        console.error("Failed to assign role", { requestId });
         return c.json(
           createErrorResponse(
             "INTERNAL_ERROR",
@@ -157,18 +133,8 @@ export function createInternalRoute(deps: InternalRouteDeps = {}) {
         await resolvedEnsureAuthzSeeded();
         const roles = await resolvedListRolesForWorkspace(listParsed.data);
         return c.json({ ok: true, data: { roles }, meta: { requestId } }, 200);
-      } catch (e) {
-        const err = e as unknown as {
-          message?: string;
-          code?: string;
-          detail?: string;
-        };
-        console.error("Failed to list roles", {
-          requestId,
-          message: err?.message,
-          code: err?.code,
-          detail: err?.detail,
-        });
+      } catch {
+        console.error("Failed to list roles", { requestId });
         return c.json(
           createErrorResponse(
             "INTERNAL_ERROR",
