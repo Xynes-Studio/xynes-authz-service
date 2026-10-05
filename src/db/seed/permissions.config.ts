@@ -112,6 +112,10 @@ export const AUTHZ_PERMISSIONS = [
     description: "Get published content by slug",
   },
 
+  // Snapshot delivery reads (CMS-INT-A4)
+  { key: "cms.delivery.listByDirectory", description: "List published folder snapshots" },
+  { key: "cms.delivery.getById", description: "Read a published entry snapshot" },
+
   // ───────────────────────────────────────────────────────────────────────────
   // CMS Templates / Content Types (Legacy)
   // ───────────────────────────────────────────────────────────────────────────
@@ -408,6 +412,8 @@ export const AUTHZ_ROLES = [
       "cms.content.create",
       "cms.content.listPublished",
       "cms.content.getPublishedBySlug",
+      "cms.delivery.listByDirectory",
+      "cms.delivery.getById",
 
       // CMS Templates / Content Types (Legacy)
       "cms.templates.listGlobal",
@@ -470,6 +476,8 @@ export const AUTHZ_ROLES = [
       "docs.document.listByWorkspace",
       "cms.content.listPublished",
       "cms.content.getPublishedBySlug",
+      "cms.delivery.listByDirectory",
+      "cms.delivery.getById",
       "cms.templates.listGlobal",
       "cms.content_types.listForWorkspace",
       "cms.content_directories.listForWorkspace",
