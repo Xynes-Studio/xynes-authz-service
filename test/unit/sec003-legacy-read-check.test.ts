@@ -1,7 +1,8 @@
+import "../support/internal-request";
 import { afterEach, beforeEach, expect, it } from "bun:test";
 import { createHmac } from "node:crypto";
 import { Hono } from "hono";
-import { requireInternalServiceAuth } from "../../src/middleware/legacy-read-check-auth";
+import { requireInternalServiceAuth } from "../../src/middleware/internal-service-auth";
 
 const names = [
   "INTERNAL_AUTH_MODE",
@@ -39,7 +40,7 @@ const validClaims = () => ({
   exp: Math.floor(Date.now() / 1000) + 60,
   requestId: "legacy-correlation",
 });
-it("confines even valid legacy credentials to POST /authz/check", async () => {
+it("rejects legacy credentials on every internal endpoint", async () => {
   process.env.INTERNAL_SERVICE_TOKEN = "read-only-token";
   for (const [path, method] of [
     ["/authz/check", "GET"],
@@ -55,25 +56,24 @@ it("confines even valid legacy credentials to POST /authz/check", async () => {
     ).toBe(403);
   }
 });
-it("fails closed when hybrid or JWT configuration is missing", async () => {
+it("requires a bound token regardless of legacy configuration", async () => {
   expect((await app().request("/authz/check", { method: "POST" })).status).toBe(
-    500,
+    401,
   );
   process.env.INTERNAL_AUTH_MODE = "jwt";
   process.env.INTERNAL_SERVICE_TOKEN = "read-only-token";
   expect((await app().request("/authz/check", { method: "POST" })).status).toBe(
-    500,
+    401,
   );
 });
-it("accepts audience-checked JWT read checks and propagates correlation", async () => {
+it("rejects otherwise valid shared JWT read checks", async () => {
   process.env.INTERNAL_AUTH_MODE = "jwt";
   process.env.INTERNAL_JWT_SIGNING_KEY = "read-check-test-key";
   const response = await app().request("/authz/check", {
     method: "POST",
     headers: { "X-Internal-Service-Token": token(validClaims()) },
   });
-  expect(response.status).toBe(200);
-  expect(await response.json()).toEqual({ requestId: "legacy-correlation" });
+  expect(response.status).toBe(403);
 });
 it("rejects static, expired, wrong-audience and wrong-signature credentials in JWT mode", async () => {
   process.env.INTERNAL_AUTH_MODE = "jwt";
@@ -95,7 +95,7 @@ it("rejects static, expired, wrong-audience and wrong-signature credentials in J
     ).toBe(403);
   }
 });
-it("keeps hybrid fallback restricted to the explicitly configured read credential", async () => {
+it("never falls back to the configured hybrid read credential", async () => {
   process.env.INTERNAL_JWT_SIGNING_KEY = "read-check-test-key";
   const invalidJwt = token(validClaims(), "wrong-key");
   process.env.INTERNAL_SERVICE_TOKEN = invalidJwt;
@@ -106,7 +106,7 @@ it("keeps hybrid fallback restricted to the explicitly configured read credentia
         headers: { "X-Internal-Service-Token": invalidJwt },
       })
     ).status,
-  ).toBe(200);
+  ).toBe(403);
   process.env.INTERNAL_SERVICE_TOKEN = "different-read-token";
   expect(
     (
