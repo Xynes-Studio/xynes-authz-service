@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { createInternalRoute } from "../../src/routes/internal/internal.route";
 import {
   signedInit,
+  signedCheckInit,
   gatewayIdentity,
   accountsIdentity,
 } from "../support/internal-request";
@@ -170,9 +171,9 @@ describe("SEC-003 privileged receiver boundary", () => {
       process.env.INTERNAL_REQUEST_TRUST_FILE = saved;
     }
   });
-  it("compatibility option cannot authenticate legacy tokens on role endpoint", async () => {
+  it("rejects legacy tokens on role endpoint", async () => {
     const app = new Hono();
-    app.use("*", requireInternalServiceAuth({ allowLegacyReadCheck: true }));
+    app.use("*", requireInternalServiceAuth());
     app.post(path, (c) => c.json({ ok: true }));
     expect(
       (
@@ -185,7 +186,7 @@ describe("SEC-003 privileged receiver boundary", () => {
   });
   it("verifies signed read checks from both callers", async () => {
     const app = new Hono();
-    app.use("*", requireInternalServiceAuth({ allowLegacyReadCheck: true }));
+    app.use("*", requireInternalServiceAuth());
     app.post("/authz/check", (c) => c.json({ allowed: true }));
     for (const issuer of ["gateway", "accounts"] as const) {
       const request = {
@@ -282,5 +283,90 @@ describe("SEC-003 authenticated action validation and errors", () => {
       (await app.request(path, { ...raw, headers, body: "x".repeat(32769) }))
         .status,
     ).toBe(400);
+  });
+});
+
+describe("SEC-003-FU-1 service-specific authz capabilities", () => {
+  function receiver() {
+    const app = new Hono();
+    let calls = 0;
+    app.use("*", requireInternalServiceAuth());
+    app.post("/authz/check", (c) => {
+      calls++;
+      return c.json({ allowed: true });
+    });
+    app.post("/internal/authz-actions", (c) => {
+      calls++;
+      return c.json({ ok: true });
+    });
+    return { app, calls: () => calls };
+  }
+  it("allows each authoring service to check its own actions, with actor and workspace binding", async () => {
+    const f = receiver();
+    for (const [issuer, actionKey] of [
+      ["cms", "cms.entry.create"],
+      ["docs", "docs.document.read"],
+    ] as const) {
+      const request = signedCheckInit(
+        {
+          method: "POST",
+          body: JSON.stringify({
+            userId: user,
+            workspaceId: tenantA,
+            actionKey,
+          }),
+        },
+        issuer,
+      );
+      expect((await f.app.request("/authz/check", request)).status).toBe(200);
+      const headers = new Headers(request.headers);
+      headers.set("X-XS-User-Id", "substitute");
+      expect(
+        (await f.app.request("/authz/check", { ...request, headers })).status,
+      ).toBe(403);
+      expect(
+        (
+          await f.app.request("/authz/check", {
+            ...request,
+            body: JSON.stringify({
+              userId: user,
+              workspaceId: tenantB,
+              actionKey,
+            }),
+          })
+        ).status,
+      ).toBe(403);
+    }
+    expect(f.calls()).toBe(2);
+  });
+  it("denies cross-service checks and all role mutations from authoring identities", async () => {
+    const f = receiver();
+    for (const [issuer, actionKey] of [
+      ["cms", "docs.document.read"],
+      ["docs", "cms.entry.create"],
+    ] as const) {
+      expect(
+        (
+          await f.app.request(
+            "/authz/check",
+            signedCheckInit(
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  userId: user,
+                  workspaceId: tenantA,
+                  actionKey,
+                }),
+              },
+              issuer,
+            ),
+          )
+        ).status,
+      ).toBe(403);
+      expect(
+        (await f.app.request(path, signedInit(path, init(), issuer))).status,
+      ).toBe(403);
+    }
+    expect(f.calls()).toBe(0);
   });
 });

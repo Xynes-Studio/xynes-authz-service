@@ -24,10 +24,7 @@ authzRoutes.use(
     },
   }),
 );
-authzRoutes.use(
-  "*",
-  requireInternalServiceAuth({ allowLegacyReadCheck: true }),
-);
+authzRoutes.use("*", requireInternalServiceAuth());
 authzRoutes.post("/check", authzCheck);
 
 export default authzRoutes;

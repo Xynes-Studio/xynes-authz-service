@@ -6,12 +6,9 @@ import {
   verifyInternalRequest,
 } from "../infra/security/internal-request";
 import { createErrorResponse, getOrCreateRequestId } from "../lib/api-error";
-import { requireInternalServiceAuth as requireLegacyReadCheckAuth } from "./legacy-read-check-auth";
 import { AUTHZ_CHECK_MAX_BODY_BYTES } from "../config/http";
 
-export function requireInternalServiceAuth(
-  options: { allowLegacyReadCheck?: boolean } = {},
-) {
+export function requireInternalServiceAuth() {
   return async (c: Context, next: Next) => {
     const requestId = getOrCreateRequestId(c);
     const token = c.req.header("X-Internal-Service-Token");
@@ -24,27 +21,6 @@ export function requireInternalServiceAuth(
         ),
         401,
       );
-    // This compatibility path cannot authenticate any mutation or role listing.
-    if (
-      options.allowLegacyReadCheck &&
-      c.req.method === "POST" &&
-      c.req.path === "/authz/check"
-    ) {
-      let bound = false;
-      try {
-        const header: unknown = JSON.parse(
-          Buffer.from(token.split(".")[0] ?? "", "base64url").toString("utf8"),
-        );
-        bound =
-          !!header &&
-          typeof header === "object" &&
-          "typ" in header &&
-          header.typ === "xynes-internal-request+jwt";
-      } catch {
-        /* A static token is handled only by the read-only adapter. */
-      }
-      if (!bound) return requireLegacyReadCheckAuth()(c, next);
-    }
     let trust: ReturnType<typeof loadInternalRequestTrust>;
     try {
       trust = loadInternalRequestTrust();

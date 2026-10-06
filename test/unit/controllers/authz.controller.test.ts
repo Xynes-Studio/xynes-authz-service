@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import app from "../../../src/index";
+import { Hono } from "hono";
+import { authzCheck } from "../../../src/controllers/authz.controller";
+// Controller validation is isolated from authentication; boundary tests exercise the real middleware.
+const app = new Hono().post("/authz/check", authzCheck);
 import { INTERNAL_SERVICE_TOKEN } from "../../support/internal-auth";
 
 describe("POST /authz/check (Controller)", () => {

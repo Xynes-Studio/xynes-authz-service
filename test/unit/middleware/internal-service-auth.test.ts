@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { Hono } from "hono";
-import { requireInternalServiceAuth } from "../../../src/middleware/legacy-read-check-auth";
+import { signedInit } from "../../support/internal-request";
+import { requireInternalServiceAuth } from "../../../src/middleware/internal-service-auth";
 
 type ErrorEnvelope = {
   ok: false;
@@ -15,8 +16,9 @@ describe("requireInternalServiceAuth (unit)", () => {
     process.env.INTERNAL_SERVICE_TOKEN = token;
   });
 
-  it("returns 500 when INTERNAL_SERVICE_TOKEN is missing", async () => {
-    process.env.INTERNAL_SERVICE_TOKEN = "";
+  it("returns 500 when receiver trust is missing", async () => {
+    const trust = process.env.INTERNAL_REQUEST_TRUST_FILE;
+    delete process.env.INTERNAL_REQUEST_TRUST_FILE;
 
     const app = new Hono();
     let ran = false;
@@ -35,6 +37,7 @@ describe("requireInternalServiceAuth (unit)", () => {
       body: JSON.stringify({}),
     });
 
+    process.env.INTERNAL_REQUEST_TRUST_FILE = trust;
     expect(res.status).toBe(500);
     expect(ran).toBe(false);
     const body = (await res.json()) as ErrorEnvelope;
@@ -83,7 +86,7 @@ describe("requireInternalServiceAuth (unit)", () => {
     expect(ran).toBe(false);
   });
 
-  it("allows request when header matches", async () => {
+  it("allows a bound gateway request", async () => {
     const app = new Hono();
     let ran = false;
     app.use("*", requireInternalServiceAuth());
@@ -92,14 +95,21 @@ describe("requireInternalServiceAuth (unit)", () => {
       return c.json({ ok: true });
     });
 
-    const res = await app.request("/authz/check", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Internal-Service-Token": token,
-      },
-      body: JSON.stringify({}),
-    });
+    const res = await app.request(
+      "/authz/check",
+      signedInit(
+        "/authz/check",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-Service-Token": token,
+          },
+          body: JSON.stringify({}),
+        },
+        "gateway",
+      ),
+    );
 
     expect(res.status).toBe(200);
     expect(ran).toBe(true);

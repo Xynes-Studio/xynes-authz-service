@@ -217,3 +217,14 @@ token lifetime use existing operation idempotency; no global replay cache exists
 SEC-003-FU-1 tracks other services' legacy internal credentials and CMS/docs'
 isolated read-only `POST /authz/check` compatibility adapter. That adapter cannot
 assign or list roles. Broader service migration is not part of this closure.
+
+## SEC-003-FU-1 current internal authentication
+
+Internal actions now require Ed25519 requests bound to receiver, operation, exact
+body, actor, workspace and request id. Historical shared-token/hybrid instructions
+in this document no longer apply to authentication. Receivers fail closed without
+public trust; callers load only their own signing file. Shared static/HS256 tokens
+are rejected, including authz read checks. Follow the backend infra identity
+runbook for coordinated seven-service rollout and rotation. Protocol mirrors are
+generated from platform-contracts and must be changed/exported there; validate
+`corepack pnpm internal-request:check` with the backend workspace present.
