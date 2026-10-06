@@ -266,3 +266,18 @@ bun run lint:fix
 # Format
 bun run format
 ```
+
+## CMS snapshot delivery (CMS-INT-A4)
+
+The catalog includes `cms.delivery.listByDirectory` and `cms.delivery.getById`.
+`workspace_owner`/`super_admin` inherit catalog permissions. The explicit
+`content_editor` and `read_only` lists receive these reads alongside their existing
+published reads; `workspace_member` receives neither. This adds no key-management
+permission or CMS write permission to read-only users.
+
+Deploy the catalog, then run the existing idempotent `bun run seed` against an
+explicitly approved environment before enabling delivery routes for user traffic.
+Source edits alone do not grant existing database roles. No live seed was run
+while implementing A4. Configuration regressions are in
+`test/unit/cms-delivery-permissions.test.ts`; deployment order and key recovery
+are documented in infra `docs/deployment/cms-delivery-access.md`.
